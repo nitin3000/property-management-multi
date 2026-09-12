@@ -1,5 +1,6 @@
-import pytest
+import os
 import time
+import pytest
 from fastapi.testclient import TestClient
 from selenium import webdriver
 from selenium.webdriver.common.by import By
@@ -8,10 +9,15 @@ from selenium.webdriver.support import expected_conditions as EC
 
 from main import app
 
+# Terminal color output constants for clear validation formatting
+OKGREEN = '\033[92m'
+ENDC = '\033[0m'
+
 @pytest.fixture(scope="module")
 def client():
-    """Provides a virtual client to test backend endpoints instantly without a running server."""
-    return TestClient(app)
+    """Provides a virtual client to test backend endpoints instantly and closes the session pool cleanly afterwards."""
+    with TestClient(app) as mock_client:
+        yield mock_client
 
 def test_deliberate_price_mismatch_error(client):
     response = client.get("/api/listings/search?minPrice=700000&maxPrice=400000")
@@ -40,68 +46,76 @@ def driver():
     driver.quit()
 
 def test_selenium_ui_search_ranking_and_pagination(driver):
-    """Launches Edge, interacts with the interface, and validates sorting scores safely with real-time debug tracking."""
-    
+    """Interacts with the interface, verifies result counts, and captures a screenshot securely."""
     print("\n[DEBUG] --- Starting Selenium UI Test Execution ---")
+    wait = WebDriverWait(driver, 10)
     
-    # Configure an implicit wait threshold across the browser session to prevent thread lock freezes
-    driver.implicitly_wait(5)
-    
-    # A. Open up the root frontend application
+    # 1. Open up the root frontend application
     target_url = "http://127.0.0.1:8000"
     print(f"[DEBUG] Navigating browser viewport to: {target_url}")
     driver.get(target_url)
     
-    # B. Locate structural input component elements directly
-    print("[DEBUG] Locating main landing page control items...")
+    # 2. Locate components and enter testing criteria
+    wait.until(EC.presence_of_element_located((By.ID, "searchBtn")))
     city_input = driver.find_element(By.ID, "city")
     search_button = driver.find_element(By.ID, "searchBtn")
     
-    print("[DEBUG] Primary UI elements identified successfully.")
-    
-    # C. Enter testing criteria parameters
-    print("[DEBUG] Clearing city field inputs...")
     city_input.clear()
+    city_input.send_keys("Miami")  
     
-    # TIP: If "Miami" has no rows in your Postgres DB table, type a city name that you know is populated
-    target_city = "Miami"
-    print(f"[DEBUG] Submitting text string entry parameters: city='{target_city}'")
-    city_input.send_keys(target_city)  
-    
-    # Click the search trigger
     print("[DEBUG] Dispatching click event listener trigger on searchBtn element...")
     search_button.click()
     
-    # D. OPTIMIZED WAIT STRATEGY: Wait up to 5 seconds until the loading text updates to actual results
+    # 3. FIXED WAIT: Wait until the text transitions away from the initial "Processing" or "Scanning" text
     print("[DEBUG] Form submitted. Waiting for dynamic listing feed cards to render...")
-    feed_container = driver.find_element(By.ID, "listingsFeed")
+    wait.until(lambda d: "Processing" not in d.find_element(By.ID, "resultsCount").text)
     
-    # E. Extract the final processed text block from the viewport container
+    # Give the browser layout engine an extra moment to settle all child cards completely
+    time.sleep(1) 
+    
+    # 4. CAPTURE DOCUMENTATION SCREENSHOT
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    docs_dir = os.path.join(base_dir, "docs")
+    os.makedirs(docs_dir, exist_ok=True)
+    screenshot_path = os.path.join(docs_dir, "gui_dashboard.png")
+    
+    driver.save_screenshot(screenshot_path)
+    print(f"[INFO] Automated GUI screenshot saved successfully to: {screenshot_path}")
+    
+    # 5. Extract text from the summary header and feed container
+    results_count_text = driver.find_element(By.ID, "resultsCount").text
+    feed_container = driver.find_element(By.ID, "listingsFeed")
     feed_text = feed_container.text
     
-    print("--------------------------------------------------------------------------------")
-    print(f"[DEBUG] LIVE CONTENT CAPTURED BY SELENIUM:\n{feed_text}")
-    print("--------------------------------------------------------------------------------")
+    print(f"[DEBUG] Header text found: '{results_count_text}'")
     
     if "Score:" in feed_text:
-        print("[DEBUG] Context match identifier string 'Score:' discovered in feed. Parsing structural row metrics...")
+        # --- VERIFY RESULT COUNTS ---
+        # Fixed: Targeted by counting elements that contain "Beds" text fields inside the feed container globally
+        property_cards = feed_container.find_elements(By.XPATH, ".//*[contains(text(), 'Beds')]")
+        actual_rendered_count = len(property_cards)
+        print(f"[DEBUG] Actual property cards counted in viewport: {actual_rendered_count}")
+        
+        # B. Parse the integer out of the dynamic header text
+        header_number = int(results_count_text.split()[0])
+        print(f"[DEBUG] Extracted total matches count integer from header text: {header_number}")
+        
+        # C. Assert count boundaries
+        if header_number <= 4:
+            assert actual_rendered_count == header_number, f"Mismatched count! Header reports {header_number} rows, but UI rendered {actual_rendered_count} items."
+            print(f"{OKGREEN}[SUCCESS] Result count matches header perfectly!{ENDC}")
+        else:
+            assert actual_rendered_count == 4, f"Pagination boundary check failed! Feed should be capped at page size 4 rows max."
+            print(f"{OKGREEN}[SUCCESS] Pagination constraints verified. Header matches total list metrics.{ENDC}")
+        # ----------------------------
+
         score_element = driver.find_element(By.XPATH, "//*[contains(text(), 'Score:')]")
-        print(f"[DEBUG] First matching text snippet captured from browser: '{score_element.text}'")
-        
         clean_score_text = score_element.text.replace("Score: ", "").replace("%", "")
-        print(f"[DEBUG] Stripped string conversion values: '{clean_score_text}'")
-        
-        parsed_score = float(clean_score_text)
-        print(f"[DEBUG] Executing unit verification float evaluation bounds check on parsed score: {parsed_score}")
-        
-        assert parsed_score >= 0.0, "Relevance Score extraction should parse into valid float metrics."
-        print("\n→ UI Verification PASSED: Scored listings rendered successfully!")
+        assert float(clean_score_text) >= 0.0
+        print("→ UI Verification PASSED: Scored listings rendered successfully!")
     else:
-        print("[DEBUG] 'Score:' missing from feed block layout. Evaluating fallback engine error configuration strings...")
-        has_fallback_text = "No results match" in feed_text or "No listings match" in feed_text or "Empty state" in feed_text or "Scanning" not in feed_text
-        print(f"[DEBUG] Result of Fallback String Scan: {has_fallback_text}")
-        
-        assert has_fallback_text
-        print("\n→ UI Verification PASSED: Empty state view block triggered correctly.")
+        assert "No results match" in feed_text or "No listings match" in feed_text or "Empty state" in feed_text
+        assert "0" in results_count_text
+        print("→ UI Verification PASSED: Empty state view block and zero-count checked correctly.")
         
     print("[DEBUG] --- Ending Selenium UI Test Execution --- \n")
