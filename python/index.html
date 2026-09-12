@@ -47,9 +47,11 @@
                 <input type="text" id="keyword" placeholder="e.g. ocean, luxury" class="w-full mt-1 p-2 border rounded text-sm">
             </div>
 
-            <button onclick="executeQuery(0)" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium p-2.5 rounded text-sm transition-colors shadow">
-                Search Properties
-            </button>
+<!-- Added id="searchBtn" to satisfy Selenium's lookup condition -->
+<button id="searchBtn" onclick="executeQuery(0)" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium p-2.5 rounded text-sm transition-colors shadow cursor-pointer">
+    Search Properties
+</button>
+
         </div>
 
         <!-- Output Feed -->
