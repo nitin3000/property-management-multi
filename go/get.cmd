@@ -1,0 +1,1 @@
+curl http://localhost:8080/api/listings/search?city=Austin&targetBudget=415000&pageSize=5
