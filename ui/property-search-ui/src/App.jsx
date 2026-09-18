@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from 'react';
 
+import ResultHeaderRow from './ResultHeaderRow.jsx';
+import ResultRow from './ResultRow.jsx';
+import SearchItem from './SearchItem.jsx';
+
 export default function App() {
   const PAGE_SIZE = 4;
 
@@ -69,45 +73,32 @@ export default function App() {
         <h1 className="text-3xl font-extrabold tracking-tight text-indigo-700">PropApp Intelligence Portal</h1>
       </header>
 
-      <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-        {/* Left Column: Form Controls */}
-        <div className="md:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-          <h2 className="text-xl font-bold mb-4 text-gray-800 border-b border-gray-100 pb-2">Query Engine</h2>
-          
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="targetBudget" className="block text-sm font-semibold text-gray-700 mb-1">Target Budget ($)</label>
-              <input type="number" id="targetBudget" value={filters.targetBudget} onChange={handleInputChange} className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2" />
-            </div>
-            <div>
-              <label htmlFor="city" className="block text-sm font-semibold text-gray-700 mb-1">City</label>
-              <input type="text" id="city" value={filters.city} onChange={handleInputChange} className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2" />
-            </div>
-            <div className="grid grid-cols-2 gap-2">
-              <div>
-                <label htmlFor="minPrice" className="block text-sm font-semibold text-gray-700 mb-1">Min Price ($)</label>
-                <input type="number" id="minPrice" value={filters.minPrice} onChange={handleInputChange} className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2" />
-              </div>
-              <div>
-                <label htmlFor="maxPrice" className="block text-sm font-semibold text-gray-700 mb-1">Max Price ($)</label>
-                <input type="number" id="maxPrice" value={filters.maxPrice} onChange={handleInputChange} className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2" />
-              </div>
-            </div>
-            <div>
-              <label htmlFor="minBedrooms" className="block text-sm font-semibold text-gray-700 mb-1">Min Bedrooms</label>
-              <input type="number" id="minBedrooms" value={filters.minBedrooms} onChange={handleInputChange} className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2" />
-            </div>
-            <div>
-              <label htmlFor="keyword" className="block text-sm font-semibold text-gray-700 mb-1">Keyword</label>
-              <input type="text" id="keyword" value={filters.keyword} onChange={handleInputChange} className="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm border p-2" />
-            </div>
-            
-            <button onClick={() => executeQuery(0)} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md shadow transition duration-150 ease-in-out mt-2">
-              Search Listings
-            </button>
-          </div>
-        </div>
+	  <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
+	    {/* Left Column: Form Controls */}
+		<div className="md:col-span-1 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+		  <h2 className="text-xl font-bold mb-4 text-gray-800 border-b border-gray-100 pb-2">Query Engine</h2>
+		  
+		  <div className="space-y-4">
 
+		<SearchItem filters={filters} handleInputChange={handleInputChange} type={"number"} htmlFor={"targetBudget"} label={"Target Budget ($)"} value={filters.targetBudget} />			            
+
+		<SearchItem filters={filters} handleInputChange={handleInputChange} type={"text"} htmlFor={"city"} label={"City"} value={filters.city} />			            
+
+		<div className="grid grid-cols-2 gap-2">
+		  <SearchItem filters={filters} handleInputChange={handleInputChange} type={"number"} htmlFor={"minPrice"} label={"Min Price ($)"} value={filters.minPrice} />			            
+		  <SearchItem filters={filters} handleInputChange={handleInputChange} type={"number"} htmlFor={"maxPrice"} label={"Max Price ($)"} value={filters.maxPrice} />			            
+		    </div>
+
+		<SearchItem filters={filters} handleInputChange={handleInputChange} type={"number"} htmlFor={"minBedrooms"} label={"Min Bedrooms"} value={filters.minBedrooms} />			            
+
+		<SearchItem filters={filters} handleInputChange={handleInputChange} type={"text"} htmlFor={"keyword"} label={"Keyword"} value={filters.keyword} />		
+			            
+		    <button onClick={() => executeQuery(0)} className="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 px-4 rounded-md shadow transition duration-150 ease-in-out mt-2">
+		      Search Listings
+		    </button>
+		  </div>
+		</div>
+		
         {/* Right Column: Status & Results Table */}
         <div className="md:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
           <h2 className="text-xl font-bold mb-4 text-gray-800 border-b border-gray-100 pb-2">
@@ -132,28 +123,10 @@ export default function App() {
             <>
               <div className="overflow-x-auto rounded-lg border border-gray-200">
                 <table className="min-w-full divide-y divide-gray-200 text-sm text-left">
-                  <thead className="bg-gray-50 text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    <tr>
-                      <th className="px-6 py-3">ID</th>
-                      <th className="px-6 py-3">City</th>
-                      <th className="px-6 py-3">Price</th>
-					  <th className="px-6 py-3">Listed</th>
-                      <th className="px-6 py-3">Beds</th>
-                      <th className="px-6 py-3">Description</th>
-                      <th className="px-6 py-3">Score</th>
-					</tr>
-                  </thead>
+				  	<ResultHeaderRow />
                   <tbody className="bg-white divide-y divide-gray-200">
                     {listings.map((item) => (
-                      <tr key={item.id} className="hover:bg-gray-50 transition duration-150">
-                        <td className="px-6 py-4 font-mono font-medium text-gray-500">{item.id}</td>
-                        <td className="px-6 py-4 font-semibold text-gray-900">{item.city}</td>
-                        <td className="px-6 py-4 font-semibold text-indigo-600">${Number(item.price).toLocaleString()}</td>
-						<td className="px-6 py-4 font-semibold text-indigo-600">{item.listedDate}</td>
-                        <td className="px-6 py-4">{item.bedrooms}</td>
-                        <td className="px-6 py-4 text-gray-600 truncate max-w-xs">{item.keyword || item.description || 'N/A'}</td>
-                        <td className="px-6 py-4 font-semibold text-indigo-600">{item.relevanceScore}%</td>
-					</tr>
+						<ResultRow item={item} />
                     ))}
                   </tbody>
                 </table>
