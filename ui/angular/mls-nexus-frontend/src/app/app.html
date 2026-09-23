@@ -1,0 +1,213 @@
+<div class="min-h-screen bg-slate-900 text-slate-100 font-sans antialiased">
+  <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur sticky top-0 z-50 px-6 py-4 flex justify-between items-center">
+    <div>
+      <h1 class="text-xl font-bold tracking-tight text-white flex items-center gap-2">
+        <span class="p-1.5 bg-blue-600 rounded-lg text-xs font-black">MLS</span> Nexus Frontend
+      </h1>
+      <p class="text-xs text-slate-400">PostgreSQL Data Sync Live Pipeline Engine</p>
+    </div>
+  </header>
+
+  <div class="max-w-[1600px] mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+    <!-- Filters Sidebar Panel -->
+    <aside class="lg:col-span-3 space-y-4">
+      <div class="bg-slate-800/60 border border-slate-700/60 p-5 rounded-2xl backdrop-blur">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-sm font-bold tracking-wider uppercase text-slate-300">Target Match Inputs</h2>
+          <button (click)="clearFilters()" class="text-xs text-blue-400 hover:text-blue-300 transition-colors">Clear</button>
+        </div>
+
+        <form [formGroup]="searchForm" (submit)="$event.preventDefault(); onApplyFilters()" class="space-y-4">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Keyword (Description)</label>
+            <input type="text" formControlName="keyword" placeholder="Search keyword description..." 
+                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Target City Location</label>
+            <input type="text" formControlName="city" placeholder="e.g. Austin" 
+                   class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Min Price ($)</label>
+              <input type="number" formControlName="minPrice" placeholder="Min" 
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Max Price ($)</label>
+              <input type="number" formControlName="maxPrice" placeholder="Max" 
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono">
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Min Beds</label>
+              <input type="number" formControlName="minBedrooms" placeholder="Beds" 
+                     class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-400 uppercase mb-1">Page Limit</label>
+              <select [value]="pageSize()" (change)="pageSize.set($any($event.target).value)" 
+                      class="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500">
+                <option [value]="2">2 per page</option>
+                <option [value]="4">4 per page</option>
+                <option [value]="10">10 per page</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="bg-gradient-to-r from-blue-900/40 to-indigo-900/40 border border-blue-800/60 p-4 rounded-xl">
+            <label class="block text-[11px] font-bold text-blue-400 uppercase mb-1">Target Action Budget ($)</label>
+            <input type="number" formControlName="targetBudget" placeholder="Enter target value" 
+                   class="w-full bg-slate-900 border border-blue-700 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-blue-500 font-mono font-bold text-blue-300">
+          </div>
+
+          <button type="submit" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-xl text-sm transition-all shadow-lg">
+            Update Search Context
+          </button>
+        </form>
+      </div>
+
+      @if (errorMessage()) {
+        <div class="p-4 bg-red-950/60 border border-red-800 text-red-300 rounded-xl text-xs font-semibold">
+          🛑 {{ errorMessage() }}
+        </div>
+      }
+    </aside>
+
+    <!-- Center Listings View Grid Panel -->
+    <main class="lg:col-span-5 space-y-4">
+      <div class="flex justify-between items-center bg-slate-800/30 p-3 rounded-xl border border-slate-800 text-xs">
+        <span class="text-slate-400">Scan Pipeline Results: <strong class="text-white">{{ allListings().length }}</strong> items</span>
+      </div>
+
+      @if (isLoading()) {
+        <div class="py-24 text-center bg-slate-800/20 border border-slate-800 rounded-2xl">
+          <div class="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p class="text-xs text-slate-400 font-mono tracking-widest">INGESTING DISTRIBUTED DATABASE REGISTRIES...</p>
+        </div>
+      } @else if (paginatedListings().length === 0) {
+        <div class="py-20 text-center bg-slate-800/20 border border-slate-800 rounded-2xl">
+          <p class="text-sm text-slate-400 font-bold">Zero records matched query criteria bounds.</p>
+        </div>
+      } @else {
+        <div class="space-y-3">
+          @for (item of paginatedListings(); track item.id + item.source) {
+            <div (click)="selectProperty(item)"
+                 [class.border-blue-500]="selectedProperty()?.id === item.id"
+                 class="bg-slate-800/40 hover:bg-slate-800/80 border border-slate-700/50 rounded-2xl p-4 transition-all cursor-pointer relative flex flex-col justify-between gap-4">
+				               <div class="flex justify-between items-start">
+				                 <div>
+				                   <div class="flex items-center gap-2 mb-1">
+				                     <span class="text-[10px] font-mono bg-slate-700 text-slate-300 px-1.5 py-0.2 rounded border border-slate-600">{{ item.source }}</span>
+				                     <span class="text-[10px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-950 px-2 rounded-full border border-emerald-800">{{ item.status || 'active' }}</span>
+				                   </div>
+				                   <h3 class="text-base font-bold text-white">{{ item.address }}</h3>
+				                   <p class="text-xs text-slate-400">{{ item.city }}</p>
+				                 </div>
+				                 @if (item.relevanceScore !== undefined) {
+				                   <div class="text-right">
+				                     <span class="inline-block bg-blue-950 text-blue-400 border border-blue-800 font-mono text-xs font-black px-2 py-0.5 rounded-lg">Score: {{ item.relevanceScore }}</span>
+				                   </div>
+				                 }
+				               </div>
+
+				               <div class="flex justify-between items-center border-t border-slate-800/80 pt-3">
+				                 <div class="text-slate-400 text-xs font-mono">
+				                   <span>{{ item.bedrooms }}</span> beds • <span>{{ item.bathrooms || '2' }}</span> baths • <span>{{ item.sqft || '1500' }}</span> sqft
+				                 </div>
+				                 <div class="text-lg font-black text-emerald-400 font-mono">
+				                   {{ item.price | currency:'USD':'symbol':'1.0-0' }}
+				                 </div>
+				               </div>
+				             </div>
+				           }
+				         </div>
+				       }
+
+				       @if (totalPages() > 1) {
+				         <footer class="flex justify-between items-center bg-slate-900 border border-slate-800 p-3 rounded-xl mt-4">
+				           <button (click)="currentPage.set(currentPage() - 1)" [disabled]="currentPage() === 1"
+				                   class="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg disabled:opacity-30 transition-all">Prev</button>
+				           <span class="text-xs text-slate-400 font-mono">Page {{ currentPage() }} of {{ totalPages() }}</span>
+				           <button (click)="currentPage.set(currentPage() + 1)" [disabled]="currentPage() === totalPages()"
+				                   class="px-3 py-1.5 text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg disabled:opacity-30 transition-all">Next</button>
+				         </footer>
+				       }
+				     </main>
+
+				     <!-- Side Inspection Panel Context -->
+				     <aside class="lg:col-span-4">
+				       <div class="bg-slate-800/40 border border-slate-700/60 p-5 rounded-2xl min-h-[400px] flex flex-col justify-between">
+				         @if (!selectedProperty()) {
+				           <div class="my-auto text-center p-6 text-slate-500">
+				             <p class="text-3xl mb-2">📊</p>
+				             <h4 class="text-sm font-bold">Inspector Telemetry Active</h4>
+				             <p class="text-xs mt-1 max-w-[220px] mx-auto">Select any item within the center feed map to view advanced spatial parameters.</p>
+				           </div>
+				         } @else {
+				           <div class="space-y-4">
+				             <div class="flex justify-between items-start border-b border-slate-700 pb-3">
+				               <div>
+				                 <h3 class="text-base font-bold text-white">{{ selectedProperty()?.address }}</h3>
+				                 <p class="text-xs text-blue-400 font-mono">ID: {{ selectedProperty()?.source }}_{{ selectedProperty()?.id }}</p>
+				               </div>
+				               <button (click)="selectedProperty.set(null)" class="text-xs text-slate-500 hover:text-slate-400 font-bold">X</button>
+				             </div>
+
+				             <div>
+				               <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">GIS Coordinates</label>
+				               <div class="w-full h-36 bg-slate-950 border border-slate-800 rounded-xl relative overflow-hidden flex flex-col justify-between p-3 font-mono text-xs">
+				                 <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#3b82f6_1px,transparent_1px)] [background-size:16px_16px]"></div>
+				                 
+				                 <div class="relative z-10 flex justify-between items-center text-[11px]">
+				                   <span class="text-slate-500 uppercase tracking-wider font-semibold">Coordinate Array</span>
+				                   <span class="text-blue-400 font-bold animate-pulse">● System Engaged</span>
+				                 </div>
+
+				                 <div class="relative z-10 grid grid-cols-2 gap-2 my-2 border-y border-slate-800/60 py-2">
+				                   <div class="bg-slate-900/80 p-2 rounded border border-slate-800/40">
+				                     <span class="block text-[9px] text-slate-500 uppercase font-sans tracking-wide">Latitude</span>
+				                     <span class="text-slate-200 font-bold tracking-tight text-xs">{{ selectedProperty()?.latitude ?? '38.9072' }}° N</span>
+				                   </div>
+				                   <div class="bg-slate-900/80 p-2 rounded border border-slate-800/40">
+				                     <span class="block text-[9px] text-slate-500 uppercase font-sans tracking-wide">Longitude</span>
+				                     <span class="text-slate-200 font-bold tracking-tight text-xs">{{ selectedProperty()?.longitude ?? '77.0369' }}° W</span>
+				                   </div>
+				                 </div>
+
+				                 <div class="relative z-10 flex gap-2">
+				                   <a [href]="'https://google.com' + (selectedProperty()?.latitude ?? '38.9072') + ',' + (selectedProperty()?.longitude ?? '-77.0369')" 
+				                      target="_blank" 
+				                      class="w-full text-center bg-blue-600/20 hover:bg-blue-600/40 text-blue-400 border border-blue-500/30 rounded py-1 px-2 text-[10px] uppercase font-bold tracking-wider transition-colors duration-200">
+				                     🌐 Launch Geolocation Map
+				                   </a>
+				                 </div>
+				               </div>
+				             </div>
+
+				             <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-800 text-xs">
+				               <h4 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-1">Listing Description Memo</h4>
+				               <p class="text-slate-300 italic leading-relaxed">"{{ selectedProperty()?.description || 'No supplementary descriptions submitted by listing source agent.' }}"</p>
+				             </div>
+
+				             <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+				               <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+				                 <span class="block text-[9px] text-slate-500 uppercase font-sans">Volume Space Density</span>
+				                 <span class="text-sm font-bold text-white">{{ selectedProperty()?.sqft || '1,650' }} SQFT</span>
+				               </div>
+				               <div class="bg-slate-900 p-2.5 rounded-lg border border-slate-800">
+				                 <span class="block text-[9px] text-slate-500 uppercase font-sans">System Ingestion Date</span>
+				                 <span class="text-sm font-bold text-white">{{ selectedProperty()?.listedDate | date:'mediumDate' }}</span>
+				               </div>
+				             </div>
+				           </div>
+				         }
+				       </div>
+				     </aside>
+				   </div>
+				 </div>
