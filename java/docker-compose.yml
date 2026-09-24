@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  postgres-db:
+    image: postgres:16-alpine
+    container_name: local-postgres
+    environment:
+      POSTGRES_DB: propdb
+      POSTGRES_USER: appuser
+      POSTGRES_PASSWORD: apppassword
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+  backend-api:
+    build: .
+    container_name: spring-backend
+    ports:
+      - "8080:8080"
+    environment:
+      DB_HOST: postgres-db
+      DB_PORT: 5432
+      DB_NAME: propdb
+      DB_USER: appuser
+      DB_PASSWORD: apppassword
+    depends_on:
+      - postgres-db
+
+volumes:
+  pgdata:
