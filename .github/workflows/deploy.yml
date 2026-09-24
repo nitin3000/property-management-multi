@@ -8,8 +8,6 @@ on:
 env:
   AWS_REGION: us-east-1                  
   ECR_REPOSITORY: my-spring-app          
-  # 1. Define your subfolder name here
-  JAVA_SUBFOLDER: java-service-folder    
 
 # Tells GitHub to run commands inside your subfolder by default
 defaults:
@@ -41,7 +39,6 @@ jobs:
         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
         IMAGE_TAG: ${{ github.sha }}
       run: |
-        # 2. Notice the "." at the end is kept because we are working inside the subfolder context
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
         
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
