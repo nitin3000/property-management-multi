@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PropApp - Search Engine Portal</title>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+</head>
+<body>
+
+    <nav class="bg-blue-700 text-white p-4 shadow-md flex justify-between items-center">
+        <h1 class="text-xl font-bold"><i class="fa-solid fa-magnifying-glass-location mr-2"></i>PropApp Intelligence Portal</h1>
+    </nav>
+
+    <div class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Search Controls -->
+        <div class="bg-white p-5 rounded-xl shadow-sm h-fit space-y-4">
+            <h2 class="font-bold text-gray-700 border-b pb-2 text-lg">Query Engine</h2>
+            
+            <div id="errorAlert" class="hidden text-xs bg-red-100 text-red-700 p-2.5 rounded border border-red-200"></div>
+
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase">Target Budget ($)</label>
+                <input type="number" id="targetBudget" value="550000" class="w-full mt-1 p-2 border rounded text-sm focus:ring-2 focus:ring-blue-400">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase">City Filter</label>
+                <input type="text" id="city" placeholder="e.g. Miami" class="w-full mt-1 p-2 border rounded text-sm focus:ring-2 focus:ring-blue-400">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase">Min Price</label>
+                    <input type="number" id="minPrice" class="w-full mt-1 p-2 border rounded text-sm">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 uppercase">Max Price</label>
+                    <input type="number" id="maxPrice" class="w-full mt-1 p-2 border rounded text-sm">
+                </div>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase">Min Bedrooms</label>
+                <input type="number" id="minBedrooms" class="w-full mt-1 p-2 border rounded text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-gray-500 uppercase">Description Keyword</label>
+                <input type="text" id="keyword" placeholder="e.g. ocean, luxury" class="w-full mt-1 p-2 border rounded text-sm">
+            </div>
+
+            <button onclick="executeQuery(0)" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium p-2.5 rounded text-sm transition-colors shadow">
+                Search Properties
+            </button>
+        </div>
+
+        <!-- Output Feed -->
+        <div class="lg:col-span-3 space-y-4">
+            <div class="bg-white p-4 rounded-xl shadow-sm flex justify-between items-center">
+                <span class="text-sm text-gray-500 font-medium" id="resultsCount">Processing database...</span>
+                <div class="inline-flex gap-2">
+                    <button id="btnPrev" disabled onclick="changePage(-1)" class="bg-gray-200 hover:bg-gray-300 disabled:opacity-50 px-3 py-1 text-xs rounded font-medium transition-colors">Prev</button>
+                    <span id="pageTracker" class="text-xs self-center font-bold text-gray-600">Page 1</span>
+                    <button id="btnNext" disabled onclick="changePage(1)" class="bg-gray-200 hover:bg-gray-300 disabled:opacity-50 px-3 py-1 text-xs rounded font-medium transition-colors">Next</button>
+                </div>
+            </div>
+
+            <div id="listingsFeed" class="space-y-3">
+                <!-- Data injection point -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentPage = 0;
+        const pageSize = 4;
+
+        document.addEventListener("DOMContentLoaded", () => executeQuery(0));
+
+        function changePage(direction) {
+            executeQuery(currentPage + direction);
+        }
+
+        async function executeQuery(targetPage) {
+            const feed = document.getElementById('listingsFeed');
+            const alertBox = document.getElementById('errorAlert');
+            alertBox.classList.add('hidden');
+            
+            // Loading placeholder state
+            feed.innerHTML = `<div class="p-12 text-center text-gray-400 font-medium"><i class="fa-solid fa-spinner fa-spin mr-2"></i>Scanning table index...</div>`;
+
+            // Accumulate dynamic parameters
+            let query = `page=${targetPage}&size=${pageSize}`;
+            const fields = ['city', 'minPrice', 'maxPrice', 'minBedrooms', 'keyword', 'targetBudget'];
+            fields.forEach(f => {
+                const val = document.getElementById(f).value;
+                if(val) query += `&${f}=${encodeURIComponent(val)}`;
+            });
+
+            try {
+                const response = await fetch(`/api/listings/search?${query}`);
+                const data = await response.json();
+
+                if (!response.ok) {
+                    feed.innerHTML = `<div class="bg-orange-50 border border-orange-200 text-orange-700 p-8 rounded-xl text-center font-medium">${data.error || 'Empty state triggered.'}</div>`;
+                    document.getElementById('resultsCount').innerText = "0 matches found";
+                    togglePagination(false, false);
+                    return;
+                }
+
+                currentPage = targetPage;
+                document.getElementById('resultsCount').innerText = `${data.totalElements} matches ranked via algorithms`;
+                document.getElementById('pageTracker').innerText = `Page ${currentPage + 1} of ${data.totalPages}`;
+                
+                feed.innerHTML = '';
+                data.content.forEach(item => {
+                    feed.innerHTML += `
+                        <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 flex justify-between items-start hover:shadow transition-shadow">
+                            <div>
+                                <span class="bg-gray-200 text-gray-700 font-mono font-bold text-xs px-2 py-0.5 rounded">${item.source}</span>
+                                <h3 class="font-bold text-gray-900 text-lg mt-1">${item.address}</h3>
+                                <p class="text-sm text-gray-500">${item.city}, ${item.state}</p>
+                                <div class="mt-3 flex gap-4 text-xs font-semibold text-gray-500">
+                                    <span><i class="fa-solid fa-bed text-blue-500 mr-1"></i>${item.bedrooms} Beds</span>
+                                    <span><i class="fa-solid fa-calendar text-blue-500 mr-1"></i>Listed: ${item.listedDate}</span>
+                                </div>
+                            </div>
+                            <div class="text-right">
+                                <div class="text-xl font-black text-green-600">$${item.price.toLocaleString()}</div>
+                                <div class="mt-2 inline-block bg-blue-50 border border-blue-200 text-blue-700 text-xs px-2.5 py-1 rounded-full font-bold">Score: ${item.relevanceScore}%</div>
+                            </div>
+                        </div>`;
+                });
+
+                togglePagination(currentPage > 0, currentPage < (data.totalPages - 1));
+            } catch (err) {
+                feed.innerHTML = `<div class="bg-red-50 border border-red-200 text-red-700 p-8 rounded-xl text-center font-medium">Critical runtime connection failure.</div>`;
+            }
+        }
+
+        function togglePagination(prevActive, nextActive) {
+            document.getElementById('btnPrev').disabled = !prevActive;
+            document.getElementById('btnNext').disabled = !nextActive;
+        }
+    </script>
+</body>
+</html>

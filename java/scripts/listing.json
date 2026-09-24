@@ -1,0 +1,12 @@
+{
+    "id": "prop_101",
+    "source": "MLS_A",
+    "address": "123 Ocean Blvd",
+    "city": "Miami",
+    "state": "FL",
+    "price": 500000.0,
+    "bedrooms": 3,
+    "status": "active",
+    "listedDate": "2026-09-10",
+    "description": "Luxury beach condo with great views"
+}
