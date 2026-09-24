@@ -14,7 +14,7 @@ env:
 # Tells GitHub to run commands inside your subfolder by default
 defaults:
   run:
-    working-directory: ${{ env.JAVA_SUBFOLDER }}
+    working-directory: java
 
 jobs:
   deploy:
