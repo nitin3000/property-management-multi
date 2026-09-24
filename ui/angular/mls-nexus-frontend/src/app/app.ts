@@ -2,33 +2,8 @@ import { Component, OnInit, signal, computed, inject } from '@angular/core';
 import { CommonModule, CurrencyPipe, DatePipe } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient, HttpParams } from '@angular/common/http';
-
-export interface PropertyListing {
-  id: string;
-  source: string;
-  address: string;
-  city: string;
-  price: number;
-  bedrooms: number;
-  bathrooms: number;
-  sqft: number;
-  latitude: number;
-  longitude: number;
-  listedDate: string;
-  status: 'active' | 'pending' | 'sold';
-  description: string;
-  relevanceScore?: number;
-}
-
-// Add this interface directly underneath your existing PropertyListing interface definition:
-export interface SpringPageResponse {
-  content: PropertyListing[];
-  totalElements: number;
-  totalPages: number;
-  size: number;
-  number: number;
-}
-
+import { PropertyListing } from './models/property_listing';
+import { SpringPageResponse } from './models/spring_page_response';
 
 @Component({
   selector: 'app-root',
