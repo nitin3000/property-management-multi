@@ -1,4 +1,4 @@
 export const environment = {
-  production: false,
-  apiUrl: '/api' // Uses your local proxy configuration
+  production: true, // Set to true for live cloud optimization features
+  apiUrl: 'http://3.138.197' // 👈 Hardcode your live backend IP directly here
 };
