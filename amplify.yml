@@ -1,7 +1,8 @@
 version: 1
 applications:
   # 🅰️ APPLICATION 1: YOUR ANGULAR APP
-  - frontend:
+  - appRoot: ui/angular/mls-nexus-frontend
+    frontend:
       phases:
         preBuild:
           commands:
@@ -10,16 +11,16 @@ applications:
           commands:
             - npm run build
       artifacts:
-        baseDirectory: dist/mls-nexus-frontend/browser # Verify your Angular output path
+        baseDirectory: dist/mls-nexus-frontend/browser # Double check this matches your folder inside dist/
         files:
           - '**/*'
       cache:
         paths:
           - node_modules/**/*
-    appRoot: ui/angular/mls-nexus-frontend
 
   # ⚛️ APPLICATION 2: YOUR REACT APP
-  - frontend:
+  - appRoot: ui/property-search-ui
+    frontend:
       phases:
         preBuild:
           commands:
@@ -28,10 +29,9 @@ applications:
           commands:
             - npm run build
       artifacts:
-        baseDirectory: dist # Change to 'build' if using standard Create React App
+        baseDirectory: dist
         files:
           - '**/*'
       cache:
         paths:
           - node_modules/**/*
-    appRoot: ui/property-search-ui
