@@ -1,4 +1,4 @@
 export const environment = {
-  production: true, // Set to true for live cloud optimization features
-  apiUrl: 'http://3.138.197' // 👈 Hardcode your live backend IP directly here
+  production: true,
+  apiUrl: 'http://3.138.197.247:8080/api' // Bypasses the missing proxy on AWS Amplify
 };
