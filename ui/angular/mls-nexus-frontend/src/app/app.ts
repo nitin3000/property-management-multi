@@ -17,7 +17,7 @@ export class AppComponent implements OnInit {
   private fb = inject(FormBuilder);
 
   // Replace the old endpoint path with this exact string match:
-  private readonly API_URL = environment.apiUrl;
+  private readonly API_URL = environment.apiUrl+'/api/listings/search';
 
 
   // State Management Signals Matrices
