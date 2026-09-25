@@ -1,4 +1,4 @@
 export const environment = {
   production: true,
-  apiUrl: 'http://3.138.197.247:8080/api' // Bypasses the missing proxy on AWS Amplify
+  apiUrl: 'https://67xxb63cxb.execute-api.us-east-2.amazonaws.com' // Bypasses the missing proxy on AWS Amplify
 };
