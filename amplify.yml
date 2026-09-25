@@ -1,20 +1,37 @@
 version: 1
-applications: # 👈 1. ADDED: This wrapper block tells Amplify it's a monorepo
-  - appRoot: ui/angular/mls-nexus-frontend # 👈 2. ADDED: This points directly to your Angular project folder
-    frontend: # 👈 3. MOVED: Everything below this is now neatly indented under the app root
+applications:
+  # 🅰️ APPLICATION 1: YOUR ANGULAR APP
+  - frontend:
       phases:
         preBuild:
           commands:
-            - nvm install 22.22.3
-            - nvm use 22.22.3
             - npm ci
         build:
           commands:
-            - npm run build -- --configuration=production
+            - npm run build
       artifacts:
-        baseDirectory: dist/mls-nexus-frontend/browser # 👈 4. CHANGED: Made relative to the appRoot directory
+        baseDirectory: dist/mls-nexus-frontend/browser # Verify your Angular output path
         files:
           - '**/*'
       cache:
         paths:
           - node_modules/**/*
+    appRoot: ui/angular/mls-nexus-frontend
+
+  # ⚛️ APPLICATION 2: YOUR REACT APP
+  - frontend:
+      phases:
+        preBuild:
+          commands:
+            - npm ci
+        build:
+          commands:
+            - npm run build
+      artifacts:
+        baseDirectory: dist # Change to 'build' if using standard Create React App
+        files:
+          - '**/*'
+      cache:
+        paths:
+          - node_modules/**/*
+    appRoot: ui/property-search-ui
