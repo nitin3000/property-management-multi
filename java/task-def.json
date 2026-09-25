@@ -30,7 +30,15 @@
           "name": "DB_USERNAME",
           "value": "postgres"
         }
-      ]
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/my-spring-task",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
     }
   ]
 }
