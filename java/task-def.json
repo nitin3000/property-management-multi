@@ -1,0 +1,36 @@
+{
+  "family": "my-spring-task",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::668857951936:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::668857951936:role/ecsSpringTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "my-spring-app",
+      "image": "://amazonaws.com",
+      "portMappings": [
+        {
+          "containerPort": 8080,
+          "hostPort": 8080
+        }
+      ],
+      "essential": true,
+      "environment": [
+        {
+          "name": "DB_HOST",
+          "value": "://amazonaws.com"
+        },
+        {
+          "name": "DB_NAME",
+          "value": "postgres"
+        },
+        {
+          "name": "DB_USERNAME",
+          "value": "postgres"
+        }
+      ]
+    }
+  ]
+}
