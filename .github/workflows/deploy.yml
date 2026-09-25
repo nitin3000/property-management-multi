@@ -5,8 +5,10 @@ on:
     branches:
       - main
     paths-ignore:
-      - 'ui/angular/**'
+      - 'ui/**'
       - 'amplify.yml' 
+      - 'go/**'
+      - 'python/**'
   workflow_dispatch:
 
 env:
