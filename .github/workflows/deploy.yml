@@ -2,7 +2,10 @@ name: Build, Push, and Deploy to Amazon ECS
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
+    paths-ignore:
+      - 'ui/angular/**'
   workflow_dispatch:
 
 env:
