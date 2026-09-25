@@ -4,6 +4,7 @@ import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators } 
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { PropertyListing } from './models/property_listing';
 import { SpringPageResponse } from './models/spring_page_response';
+import { environment } from '../environments/environment'; 
 
 @Component({
   selector: 'app-root',
