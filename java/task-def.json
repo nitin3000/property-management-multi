@@ -61,6 +61,10 @@
                 {
                     "name": "SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT",
                     "value": "org.hibernate.dialect.PostgreSQLDialect"
+                },
+                {
+                    "name": "REDIS_HOST",
+                    "value": "property-searchredis-cache-e06ejl.serverless.use2.cache.amazonaws.com"
                 }
             ],
       "logConfiguration": {
