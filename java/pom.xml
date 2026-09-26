@@ -93,7 +93,7 @@
 
 <!-- Exposes Actuator metrics in clean Prometheus format -->
 <dependency>
-    <groupId>org.google.protobuf</groupId>
+    <groupId>com.google.protobuf</groupId>
     <artifactId>protobuf-java</artifactId>
     <version>3.25.5</version> <!-- Added for dependency stability in Java 21 -->
 </dependency>
