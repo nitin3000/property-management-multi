@@ -29,7 +29,7 @@ applications:
             - npm ci 
         build:
           commands:
-            - VITE_API_URL=$VITE_API_URL npm run build
+            - export VITE_API_URL=https://67xxb63cxb.execute-api.us-east-2.amazonaws.com && npm run build
       artifacts:
         baseDirectory: dist
         files:
