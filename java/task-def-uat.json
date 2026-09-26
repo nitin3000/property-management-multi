@@ -1,21 +1,79 @@
 {
   "family": "property-search-service-uat",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "256",
+  "memory": "512",
+  "executionRoleArn": "arn:aws:iam::668857951936:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::668857951936:role/ecsSpringTaskRole",
   "containerDefinitions": [
     {
       "name": "property-search-service-uat",
       "image": "PLACEHOLDER_IMAGE",
-      "cpu": 0,
-      "essential": true,
       "portMappings": [
         {
           "containerPort": 8080,
-          "hostPort": 8080,
-          "protocol": "tcp"
+          "hostPort": 8080
         }
       ],
+      "essential": true,
       "environment": [
-        { "name": "SPRING_PROFILES_ACTIVE", "value": "uat" },
-        { "name": "REDIS_HOST", "value": "your-uat-redis-endpoint" }
+        {
+          "name": "SPRING_PROFILES_ACTIVE",
+          "value": "uat"
+        },
+        {
+          "name": "AWS_REGION",
+          "value": "us-east-2"
+        },
+        {
+          "name": "SPRING_DATASOURCE_DRIVER_CLASS_NAME",
+          "value": "software.amazon.jdbc.Driver"
+        },
+        {
+          "name": "SPRING_JPA_PROPERTIES_HIBERNATE_CONNECTION_URL",
+          "value": "jdbc:aws-wrapper:postgresql://database-1.cluster-cnwoiaimcr95.us-east-2.rds.amazonaws.com:5432/postgres?ssl=true&sslmode=require&wrapperPlugins=iam"
+        },
+        {
+          "name": "SPRING_DATASOURCE_PASSWORD",
+          "value": "iam-placeholder-auth"
+        },
+        {
+          "name": "SPRING_DATASOURCE_URL",
+          "value": "jdbc:aws-wrapper:postgresql://database-1.cluster-cnwoiaimcr95.us-east-2.rds.amazonaws.com:5432/postgres?ssl=true&sslmode=require&wrapperPlugins=iam"
+        },
+        {
+          "name": "SPRING_DATASOURCE_USERNAME",
+          "value": "postgres"
+        },
+        {
+          "name": "SPRING_JPA_PROPERTIES_HIBERNATE_CONNECTION_DRIVER_CLASS",
+          "value": "software.amazon.jdbc.Driver"
+        },
+        {
+          "name": "SPRING_JPA_PROPERTIES_HIBERNATE_CONNECTION_USERNAME",
+          "value": "postgres"
+        },
+        {
+          "name": "SPRING_JPA_PROPERTIES_HIBERNATE_HBM2DDL_AUTO",
+          "value": "none"
+        },
+        {
+          "name": "SPRING_DATASOURCE_HIKARI_USERNAME",
+          "value": "postgres"
+        },
+        {
+          "name": "SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT",
+          "value": "org.hibernate.dialect.PostgreSQLDialect"
+        },
+        {
+          "name": "REDIS_HOST",
+          "value": "property-searchredis-cache-e06ejl.serverless.use2.cache.amazonaws.com"
+        },
+        {
+          "name": "REDIS_PORT",
+          "value": "6379"
+        }
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
@@ -26,10 +84,5 @@
         }
       }
     }
-  ],
-  "requiresCompatibilities": ["FARGATE"],
-  "networkMode": "awsvpc",
-  "cpu": "256",
-  "memory": "512"
+  ]
 }
-
