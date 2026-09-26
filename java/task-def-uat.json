@@ -32,7 +32,7 @@
         },
         {
           "name": "SPRING_JPA_PROPERTIES_HIBERNATE_CONNECTION_URL",
-          "value": "jdbc:aws-wrapper:postgresql://database-1.cluster-cnwoiaimcr95.us-east-2.rds.amazonaws.com:5432/postgres?ssl=true&sslmode=require&wrapperPlugins=iam"
+          "value": "jdbc:aws-wrapper:postgresql://://amazonaws.com"
         },
         {
           "name": "SPRING_DATASOURCE_PASSWORD",
@@ -40,7 +40,7 @@
         },
         {
           "name": "SPRING_DATASOURCE_URL",
-          "value": "jdbc:aws-wrapper:postgresql://database-1.cluster-cnwoiaimcr95.us-east-2.rds.amazonaws.com:5432/postgres?ssl=true&sslmode=require&wrapperPlugins=iam"
+          "value": "jdbc:aws-wrapper:postgresql://://amazonaws.com"
         },
         {
           "name": "SPRING_DATASOURCE_USERNAME",
@@ -68,7 +68,7 @@
         },
         {
           "name": "REDIS_HOST",
-          "value": "property-searchredis-cache-e06ejl.serverless.use2.cache.amazonaws.com"
+          "value": "property-search-cache-uat.serverless.use2.cache.amazonaws.com"
         },
         {
           "name": "REDIS_PORT",
