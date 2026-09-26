@@ -79,6 +79,11 @@
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-data-redis</artifactId>
 </dependency>
+<!-- High-Performance Connection Pooling Driver Dependency -->
+<dependency>
+    <groupId>org.apache.commons</groupId>
+    <artifactId>commons-pool2</artifactId>
+</dependency>
 
 <!-- Core Telemetry & Metric Engine -->
 <dependency>
