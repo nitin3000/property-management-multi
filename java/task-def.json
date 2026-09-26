@@ -17,20 +17,52 @@
         }
       ],
       "essential": true,
-      "environment": [
-        {
-          "name": "DB_HOST",
-          "value": "://amazonaws.com"
-        },
-        {
-          "name": "DB_NAME",
-          "value": "postgres"
-        },
-        {
-          "name": "DB_USERNAME",
-          "value": "postgres"
-        }
-      ],
+            "environment": [
+                {
+                    "name": "SPRING_DATASOURCE_DRIVER_CLASS_NAME",
+                    "value": "software.amazon.jdbc.Driver"
+                },
+                {
+                    "name": "AWS_REGION",
+                    "value": "us-east-2"
+                },
+                {
+                    "name": "SPRING_JPA_PROPERTIES_HIBERNATE_CONNECTION_URL",
+                    "value": "jdbc:aws-wrapper:postgresql://database-1.cluster-cnwoiaimcr95.us-east-2.rds.amazonaws.com:5432/postgres?ssl=true&sslmode=require&wrapperPlugins=iam"
+                },
+                {
+                    "name": "SPRING_DATASOURCE_PASSWORD",
+                    "value": "iam-placeholder-auth"
+                },
+                {
+                    "name": "SPRING_DATASOURCE_URL",
+                    "value": "jdbc:aws-wrapper:postgresql://database-1.cluster-cnwoiaimcr95.us-east-2.rds.amazonaws.com:5432/postgres?ssl=true&sslmode=require&wrapperPlugins=iam"
+                },
+                {
+                    "name": "SPRING_DATASOURCE_USERNAME",
+                    "value": "postgres"
+                },
+                {
+                    "name": "SPRING_JPA_PROPERTIES_HIBERNATE_CONNECTION_DRIVER_CLASS",
+                    "value": "software.amazon.jdbc.Driver"
+                },
+                {
+                    "name": "SPRING_JPA_PROPERTIES_HIBERNATE_CONNECTION_USERNAME",
+                    "value": "postgres"
+                },
+                {
+                    "name": "SPRING_JPA_PROPERTIES_HIBERNATE_HBM2DDL_AUTO",
+                    "value": "none"
+                },
+                {
+                    "name": "SPRING_DATASOURCE_HIKARI_USERNAME",
+                    "value": "postgres"
+                },
+                {
+                    "name": "SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT",
+                    "value": "org.hibernate.dialect.PostgreSQLDialect"
+                }
+            ],
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
