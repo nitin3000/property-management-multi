@@ -1,0 +1,73 @@
+name: Build, Push, and Deploy to Amazon ECS (UAT)
+
+on:
+  push:
+    branches:
+      - uat # 👈 Changed from main to uat
+    paths-ignore:
+      - 'ui/**'
+      - 'amplify.yml' 
+      - 'go/**'
+      - 'python/**'
+  workflow_dispatch:
+
+env:
+  AWS_REGION: us-east-2                  
+  ECR_REPOSITORY: property-search-service-uat          
+  ECS_CLUSTER: property-search-cluster-uat
+  ECS_SERVICE: property-search-service-uat
+  ECS_TASK_DEFINITION: java/task-def-uat.json 
+
+defaults:
+  run:
+    working-directory: java
+
+jobs:
+  deploy:
+    name: Build and Release to UAT
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
+
+    - name: Login to Amazon ECR
+      id: login-ecr
+      uses: aws-actions/amazon-ecr-login@v2
+
+    - name: Build, tag, and push image to Amazon ECR
+      id: build-image
+      env:
+        ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        IMAGE_TAG: ${{ github.sha }}
+      run: |
+        # Build using the unique commit SHA and keep a static 'uat' tag updated
+        docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:uat .
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+        docker push $ECR_REGISTRY/$ECR_REPOSITORY:uat
+        # Output the exact unique commit image URI for tracking
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+    # 🚀 ECS DEPLOYMENT STEPS 🚀
+    - name: Fill in the new image ID in the Amazon ECS task definition
+      id: task-def
+      uses: aws-actions/amazon-ecs-render-task-definition@v1
+      with:
+        task-definition: ${{ env.ECS_TASK_DEFINITION }}
+        container-name: property-search-service-uat
+        image: ${{ steps.build-image.outputs.image }}
+
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: ${{ env.ECS_SERVICE }}
+        cluster: ${{ env.ECS_CLUSTER }}
+        wait-for-service-stability: true
