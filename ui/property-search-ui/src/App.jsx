@@ -40,7 +40,11 @@ export default function App() {
     });
 
     try {
-      const response = await fetch(`/api/listings/search?${query}`);
+		const baseUrl = import.meta.env.VITE_API_URL || '';
+
+		// 2. Combine the variable with your exact endpoint route (Ensure NO trailing slash before ?)
+		const response = await fetch(`${baseUrl}/api/listings/search?${query}`);
+		
       const data = await response.json();
 
       if (!response.ok) {
