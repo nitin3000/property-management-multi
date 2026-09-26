@@ -10,6 +10,10 @@ import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.redis.core.RedisTemplate;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.concurrent.TimeUnit;
 
 @Service
 public class ListingService {
@@ -17,9 +21,50 @@ public class ListingService {
     @Autowired
     private ListingRepository listingRepository;
 
-    public Page<ListingResponseDTO> getRankedListings(
-            String city, Double minPrice, Double maxPrice, Integer minBedrooms, String keyword,
-            Double targetBudget, int page, int size) {
+    @Autowired
+    private RedisTemplate<String, Object> redisTemplate;
+    
+public Page<ListingResponseDTO> getRankedListings(
+        String city, Double minPrice, Double maxPrice, Integer minBedrooms, String keyword,
+        Double targetBudget, int page, int size) {
+    
+    String cacheKey = "none";
+    try {
+        // 1. CRITICAL BUG FIX: Exclude page and size from the hash string entirely
+        String rawParamsString = String.format("city:%s|minP:%s|maxP:%s|beds:%s|key:%s|budg:%s",
+                city != null ? city.toLowerCase().trim() : "all",
+                minPrice != null ? minPrice.toString() : "0",
+                maxPrice != null ? maxPrice.toString() : "max",
+                minBedrooms != null ? minBedrooms.toString() : "0",
+                keyword != null ? keyword.toLowerCase().trim() : "none",
+                targetBudget != null ? targetBudget.toString() : "none"
+        );
+
+        MessageDigest digest = MessageDigest.getInstance("MD5");
+        byte[] hashBytes = digest.digest(rawParamsString.getBytes(StandardCharsets.UTF_8));
+        StringBuilder hexString = new StringBuilder();
+        for (byte b : hashBytes) {
+            String hex = Integer.toHexString(0xff & b);
+            if (hex.length() == 1) hexString.append('0');
+            hexString.append(hex);
+        }
+        cacheKey = "search::master::" + hexString.toString();
+
+        // 2. TIER 1 CACHE CHECK: Pull the entire pre-sorted master list from memory
+        Object cachedData = redisTemplate.opsForValue().get(cacheKey);
+        if (cachedData != null) {
+            List<ListingResponseDTO> masterRankedList = (List<ListingResponseDTO>) cachedData;
+           
+            // Execute the client boundary pagination cuts instantly on the cached master list
+            int start = Math.min(page * size, masterRankedList.size());
+            int end = Math.min((start + size), masterRankedList.size());
+            List<ListingResponseDTO> pageContent = masterRankedList.subList(start, end);
+            
+            return new PageImpl<>(pageContent, PageRequest.of(page, size), masterRankedList.size());
+        }
+    } catch (Exception e) {
+        System.err.println("Redis Master Lookup Jitter: " + e.getMessage());
+    }
         
         List<Listing> filteredRawList = listingRepository.findWithFilters(city, minPrice, maxPrice, minBedrooms, keyword);
 
@@ -32,6 +77,13 @@ public class ListingService {
                     return b.getListedDate().compareTo(a.getListedDate());
                 })
                 .collect(Collectors.toList());
+    try {
+        if (rankedList != null && !rankedList.isEmpty() && !"none".equals(cacheKey)) {
+            redisTemplate.opsForValue().set(cacheKey, rankedList, 5, TimeUnit.MINUTES);
+        }
+    } catch (Exception e) {
+        System.err.println("Failed to write master list to ElastiCache: " + e.getMessage());
+    }
 
         // Safe client boundary pagination cuts
         int start = Math.min(page * size, rankedList.size());
