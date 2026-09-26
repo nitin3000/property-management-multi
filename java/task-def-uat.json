@@ -32,7 +32,7 @@
         },
         {
           "name": "SPRING_JPA_PROPERTIES_HIBERNATE_CONNECTION_URL",
-          "value": "jdbc:aws-wrapper:postgresql://://amazonaws.com"
+          "value": "jdbc:aws-wrapper:postgresql://database-2.cluster-cnwoiaimcr95.us-east-2.rds.amazonaws.com:5432/postgres?ssl=true&sslmode=require&wrapperPlugins=iam"
         },
         {
           "name": "SPRING_DATASOURCE_PASSWORD",
@@ -40,7 +40,7 @@
         },
         {
           "name": "SPRING_DATASOURCE_URL",
-          "value": "jdbc:aws-wrapper:postgresql://://amazonaws.com"
+          "value": "jdbc:aws-wrapper:postgresql://database-2.cluster-cnwoiaimcr95.us-east-2.rds.amazonaws.com:5432/postgres?ssl=true&sslmode=require&wrapperPlugins=iam"
         },
         {
           "name": "SPRING_DATASOURCE_USERNAME",
