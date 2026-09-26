@@ -65,6 +65,10 @@
                 {
                     "name": "REDIS_HOST",
                     "value": "property-searchredis-cache-e06ejl.serverless.use2.cache.amazonaws.com"
+                },
+               {
+                    "name": "REDIS_PORT",
+                    "value": "6379"
                 }
             ],
       "logConfiguration": {
