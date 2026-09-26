@@ -74,6 +74,25 @@
     <artifactId>postgresql</artifactId>
     <scope>runtime</scope>
 </dependency>
+		<!-- High-Speed Redis Caching Driver -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-data-redis</artifactId>
+</dependency>
+
+<!-- Core Telemetry & Metric Engine -->
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-actuator</artifactId>
+</dependency>
+
+<!-- Exposes Actuator metrics in clean Prometheus format -->
+<dependency>
+    <groupId>org.google.protobuf</groupId>
+    <artifactId>protobuf-java</artifactId>
+    <version>3.25.5</version> <!-- Added for dependency stability in Java 21 -->
+</dependency>
+
 	</dependencies>
 
 	<build>
