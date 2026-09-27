@@ -2,8 +2,8 @@
   "family": "property-search-service-uat",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
-  "cpu": "256",
-  "memory": "512",
+  "cpu": "512",
+  "memory": "1024",
   "executionRoleArn": "arn:aws:iam::668857951936:role/ecsTaskExecutionRole",
   "taskRoleArn": "arn:aws:iam::668857951936:role/ecsSpringTaskRole",
   "containerDefinitions": [
@@ -67,12 +67,16 @@
           "value": "org.hibernate.dialect.PostgreSQLDialect"
         },
         {
-          "name": "REDIS_HOST",
-          "value": "property-search-cache-uat.serverless.use2.cache.amazonaws.com"
+          "name": "SPRING_DATA_REDIS_HOST",
+          "value": "127.0.0.1"
         },
         {
-          "name": "REDIS_PORT",
+          "name": "SPRING_DATA_REDIS_PORT",
           "value": "6379"
+        },
+        {
+          "name": "MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS",
+          "value": "always"
         }
       ],
       "logConfiguration": {
@@ -81,6 +85,25 @@
           "awslogs-group": "/ecs/property-search-service-uat",
           "awslogs-region": "us-east-2",
           "awslogs-stream-prefix": "ecs"
+        }
+      }
+    },
+    {
+      "name": "embedded-redis-test",
+      "image": "redis:7-alpine",
+      "essential": true,
+      "portMappings": [
+        {
+          "containerPort": 6379,
+          "hostPort": 6379
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/property-search-service-uat",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "redis"
         }
       }
     }
