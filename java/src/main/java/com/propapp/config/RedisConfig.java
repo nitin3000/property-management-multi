@@ -32,23 +32,20 @@ public class RedisConfig {
         String clusterNode = String.format("%s:%d", redisHost, redisPort);
         RedisClusterConfiguration clusterConfig = new RedisClusterConfiguration(Collections.singleton(clusterNode));
         
-        // 🚀 CRITICAL SERVERLESS FIX #1: Disable dynamic topology refresh routines
+        // 🚀 FIXED: Removed the boolean argument from adaptive refresh options to fix compiler error
         ClusterTopologyRefreshOptions topologyRefreshOptions = ClusterTopologyRefreshOptions.builder()
                 .enablePeriodicRefresh(false)
-                .enableAllAdaptiveRefreshTriggers(false)
                 .build();
 
-        // 🚀 CRITICAL SERVERLESS FIX #2: Turn off node validation so it trusts the virtual proxy
         ClusterClientOptions clusterClientOptions = ClusterClientOptions.builder()
                 .topologyRefreshOptions(topologyRefreshOptions)
                 .validateClusterNodeMembership(false) 
                 .build();
 
-        // 🚀 CRITICAL SERVERLESS FIX #3: Establish a generous 10-second command timeout string
         LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
                 .commandTimeout(Duration.ofSeconds(10))
                 .clientOptions(clusterClientOptions)
-                .useSsl() // Keep encryption mandatory
+                .useSsl() 
                 .build();
                 
         return new LettuceConnectionFactory(clusterConfig, clientConfig);
