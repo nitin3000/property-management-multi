@@ -25,10 +25,10 @@ public class RedisConfig {
         // 2. Map polymorphic data streams (Array lists of your DTO structures) securely
         objectMapper.activateDefaultTyping(
             objectMapper.getPolymorphicTypeValidator(), 
-            ObjectMapper.DefaultTyping.NON_FINAL, 
+            ObjectMapper.DefaultTyping.EVERYTHING, 
             com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY
         );
-
+        
         // 3. Wrap configurations into the robust Generic serializer 
         GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 
