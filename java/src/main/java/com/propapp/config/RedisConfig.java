@@ -3,7 +3,7 @@ package com.propapp.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
+import org.springframework.data.redis.connection.RedisClusterConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -12,6 +12,7 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Value;
+import java.util.Collections;
 
 @Configuration
 public class RedisConfig {
@@ -22,20 +23,21 @@ public class RedisConfig {
     @Value("${spring.data.redis.port:6379}")
     private int redisPort;
 
-    // 🚀 FIX #1: Re-introduce the Connection Factory to enforce secure SSL/TLS handshakes
+    // 🚀 FIX: Switch connection architecture to Cluster Mode to match ElastiCache Serverless requirements
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        RedisStandaloneConfiguration serverConfig = new RedisStandaloneConfiguration(redisHost, redisPort);
+        // Formats your endpoint into a secure multi-node cluster configuration node string
+        String clusterNode = String.format("%s:%d", redisHost, redisPort);
+        RedisClusterConfiguration clusterConfig = new RedisClusterConfiguration(Collections.singleton(clusterNode));
         
-        // Instructs Lettuce to create an encrypted SSL tunnel to satisfy Serverless Redis
+        // Enforces the mandatory secure SSL/TLS connection tunnel
         LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
                 .useSsl()
                 .build();
                 
-        return new LettuceConnectionFactory(serverConfig, clientConfig);
+        return new LettuceConnectionFactory(clusterConfig, clientConfig);
     }
 
-    // 🚀 FIX #2: Pass that factory explicitly to your fully customized template
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
