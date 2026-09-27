@@ -56,7 +56,7 @@
         },
         {
           "name": "SPRING_JPA_PROPERTIES_HIBERNATE_HBM2DDL_AUTO",
-          "value": "none"
+          "value": "update"
         },
         {
           "name": "SPRING_DATASOURCE_HIKARI_USERNAME",
