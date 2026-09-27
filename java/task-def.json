@@ -128,13 +128,6 @@
           "value": "20s"
         }
       ],
-      "healthCheck": {
-        "command": ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health/readiness || exit 1"],
-        "interval": 15,
-        "timeout": 5,
-        "retries": 3,
-        "startPeriod": 30
-      },
       "stopTimeout": 30,
       "logConfiguration": {
         "logDriver": "awslogs",
