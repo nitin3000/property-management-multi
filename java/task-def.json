@@ -2,75 +2,140 @@
   "family": "my-spring-task",
   "networkMode": "awsvpc",
   "requiresCompatibilities": ["FARGATE"],
-  "cpu": "256",
-  "memory": "512",
+  "cpu": "512",
+  "memory": "1024",
   "executionRoleArn": "arn:aws:iam::668857951936:role/ecsTaskExecutionRole",
   "taskRoleArn": "arn:aws:iam::668857951936:role/ecsSpringTaskRole",
   "containerDefinitions": [
     {
+      "name": "redis-sidecar",
+      "image": "redis:7-alpine",
+      "essential": true,
+      "command": [
+        "redis-server",
+        "--maxmemory", "256mb",
+        "--maxmemory-policy", "allkeys-lru",
+        "--save", "",
+        "--appendonly", "no"
+      ],
+      "portMappings": [
+        {
+          "containerPort": 6379,
+          "hostPort": 6379,
+          "protocol": "tcp"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "redis-cli ping || exit 1"],
+        "interval": 10,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 5
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/my-spring-task",
+          "awslogs-region": "us-east-2",
+          "awslogs-stream-prefix": "redis"
+        }
+      }
+    },
+    {
       "name": "my-spring-app",
-      "image": "://amazonaws.com",
+      "image": "PLACEHOLDER_IMAGE",
+      "essential": true,
+      "dependsOn": [
+        {
+          "containerName": "redis-sidecar",
+          "condition": "HEALTHY"
+        }
+      ],
       "portMappings": [
         {
           "containerPort": 8080,
-          "hostPort": 8080
+          "hostPort": 8080,
+          "protocol": "tcp"
         }
       ],
-      "essential": true,
-            "environment": [
-                {
-                    "name": "SPRING_DATASOURCE_DRIVER_CLASS_NAME",
-                    "value": "software.amazon.jdbc.Driver"
-                },
-                {
-                    "name": "AWS_REGION",
-                    "value": "us-east-2"
-                },
-                {
-                    "name": "SPRING_JPA_PROPERTIES_HIBERNATE_CONNECTION_URL",
-                    "value": "jdbc:aws-wrapper:postgresql://database-1.cluster-cnwoiaimcr95.us-east-2.rds.amazonaws.com:5432/postgres?ssl=true&sslmode=require&wrapperPlugins=iam"
-                },
-                {
-                    "name": "SPRING_DATASOURCE_PASSWORD",
-                    "value": "iam-placeholder-auth"
-                },
-                {
-                    "name": "SPRING_DATASOURCE_URL",
-                    "value": "jdbc:aws-wrapper:postgresql://database-1.cluster-cnwoiaimcr95.us-east-2.rds.amazonaws.com:5432/postgres?ssl=true&sslmode=require&wrapperPlugins=iam"
-                },
-                {
-                    "name": "SPRING_DATASOURCE_USERNAME",
-                    "value": "postgres"
-                },
-                {
-                    "name": "SPRING_JPA_PROPERTIES_HIBERNATE_CONNECTION_DRIVER_CLASS",
-                    "value": "software.amazon.jdbc.Driver"
-                },
-                {
-                    "name": "SPRING_JPA_PROPERTIES_HIBERNATE_CONNECTION_USERNAME",
-                    "value": "postgres"
-                },
-                {
-                    "name": "SPRING_JPA_PROPERTIES_HIBERNATE_HBM2DDL_AUTO",
-                    "value": "none"
-                },
-                {
-                    "name": "SPRING_DATASOURCE_HIKARI_USERNAME",
-                    "value": "postgres"
-                },
-                {
-                    "name": "SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT",
-                    "value": "org.hibernate.dialect.PostgreSQLDialect"
-                },
-                {
-                    "name": "REDIS_HOST",
-                    "value": "property-searchredis-cache-e06ejl.serverless.use2.cache.amazonaws.com"
-                },
-               {
-                    "name": "REDIS_PORT",
-                    "value": "6379"
-                }
-            ],
+      "environment": [
+        {
+          "name": "AWS_REGION",
+          "value": "us-east-2"
+        },
+        {
+          "name": "SPRING_DATASOURCE_DRIVER_CLASS_NAME",
+          "value": "software.amazon.jdbc.Driver"
+        },
+        {
+          "name": "SPRING_DATASOURCE_URL",
+          "value": "jdbc:aws-wrapper:postgresql://database-1.cluster-cnwoiaimcr95.us-east-2.rds.amazonaws.com:5432/postgres?ssl=true&sslmode=require&wrapperPlugins=iam"
+        },
+        {
+          "name": "SPRING_DATASOURCE_USERNAME",
+          "value": "postgres"
+        },
+        {
+          "name": "SPRING_DATASOURCE_PASSWORD",
+          "value": "iam-placeholder-auth"
+        },
+        {
+          "name": "SPRING_DATASOURCE_HIKARI_USERNAME",
+          "value": "postgres"
+        },
+        {
+          "name": "SPRING_JPA_PROPERTIES_HIBERNATE_CONNECTION_DRIVER_CLASS",
+          "value": "software.amazon.jdbc.Driver"
+        },
+        {
+          "name": "SPRING_JPA_PROPERTIES_HIBERNATE_CONNECTION_URL",
+          "value": "jdbc:aws-wrapper:postgresql://database-1.cluster-cnwoiaimcr95.us-east-2.rds.amazonaws.com:5432/postgres?ssl=true&sslmode=require&wrapperPlugins=iam"
+        },
+        {
+          "name": "SPRING_JPA_PROPERTIES_HIBERNATE_CONNECTION_USERNAME",
+          "value": "postgres"
+        },
+        {
+          "name": "SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT",
+          "value": "org.hibernate.dialect.PostgreSQLDialect"
+        },
+        {
+          "name": "SPRING_JPA_PROPERTIES_HIBERNATE_HBM2DDL_AUTO",
+          "value": "none"
+        },
+        {
+          "name": "REDIS_HOST",
+          "value": "127.0.0.1"
+        },
+        {
+          "name": "REDIS_PORT",
+          "value": "6379"
+        },
+        {
+          "name": "SPRING_DATA_REDIS_HOST",
+          "value": "127.0.0.1"
+        },
+        {
+          "name": "SPRING_DATA_REDIS_PORT",
+          "value": "6379"
+        },
+        {
+          "name": "SERVER_SHUTDOWN",
+          "value": "graceful"
+        },
+        {
+          "name": "SPRING_LIFECYCLE_TIMEOUT_PER_SHUTDOWN_PHASE",
+          "value": "20s"
+        }
+      ],
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:8080/actuator/health/readiness || exit 1"],
+        "interval": 15,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 30
+      },
+      "stopTimeout": 30,
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
