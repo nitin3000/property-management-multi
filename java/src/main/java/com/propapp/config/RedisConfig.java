@@ -23,14 +23,14 @@ public class RedisConfig {
     @Value("${spring.data.redis.port:6379}")
     private int redisPort;
 
-    // 🚀 FIX: Switch connection architecture to Cluster Mode to match ElastiCache Serverless requirements
+    // 🚀 FIX 1: Explicitly configure the connection factory for ElastiCache Serverless
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        // Formats your endpoint into a secure multi-node cluster configuration node string
+        // Enforce Cluster Configuration for Serverless Redis topology
         String clusterNode = String.format("%s:%d", redisHost, redisPort);
         RedisClusterConfiguration clusterConfig = new RedisClusterConfiguration(Collections.singleton(clusterNode));
         
-        // Enforces the mandatory secure SSL/TLS connection tunnel
+        // Enforce mandatory TLS/SSL encryption handshake
         LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
                 .useSsl()
                 .build();
@@ -38,27 +38,32 @@ public class RedisConfig {
         return new LettuceConnectionFactory(clusterConfig, clientConfig);
     }
 
+    // 🚀 FIX 2: Explicitly pass the custom connection factory into the template configuration
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
         template.setConnectionFactory(connectionFactory);
 
+        // 1. Establish the basic Object Mapper configurations
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         objectMapper.disable(com.fasterxml.jackson.databind.SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
         
+        // 2. Map polymorphic data streams (Array lists of your DTO structures) securely
         objectMapper.activateDefaultTyping(
             objectMapper.getPolymorphicTypeValidator(), 
-            ObjectMapper.DefaultTyping.EVERYTHING, 
+            ObjectMapper.DefaultTyping.EVERYTHING, // Updated to EVERYTHING to catch root-level ArrayLists
             com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY
         );
 
-        GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+        // 3. Wrap configurations into the robust Generic serializer 
+        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 
+        // 4. Apply serializers natively to your data structure contexts
         template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(jsonSerializer);
+        template.setValueSerializer(serializer);
         template.setHashKeySerializer(new StringRedisSerializer());
-        template.setHashValueSerializer(jsonSerializer);
+        template.setHashValueSerializer(serializer);
 
         return template;
     }
