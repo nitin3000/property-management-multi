@@ -1,4 +1,4 @@
-name: Build, Push, and Deploy to Amazon ECS
+name: Build, Push, and Deploy to Amazon ECS (Production)
 
 on:
   push:
@@ -16,7 +16,7 @@ env:
   ECR_REPOSITORY: my-spring-app          
   ECS_CLUSTER: my-spring-cluster
   ECS_SERVICE: my-spring-service-v2
-  ECS_TASK_DEFINITION: java/task-def.json # Kept inside your code folder
+  ECS_TASK_DEFINITION: java/task-def.json 
 
 defaults:
   run:
@@ -24,7 +24,7 @@ defaults:
 
 jobs:
   deploy:
-    name: Build and Release
+    name: Build and Release to Production
     runs-on: ubuntu-latest
 
     steps:
@@ -51,9 +51,9 @@ jobs:
         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG -t $ECR_REGISTRY/$ECR_REPOSITORY:latest .
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
         docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
-        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:latest" >> $GITHUB_OUTPUT
+        echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-    # 🚀 NEW DEPLOYMENT STEPS 🚀
+    # 🚀 ECS DEPLOYMENT STEPS 🚀
     - name: Fill in the new image ID in the Amazon ECS task definition
       id: task-def
       uses: aws-actions/amazon-ecs-render-task-definition@v1
@@ -62,10 +62,10 @@ jobs:
         container-name: my-spring-app
         image: ${{ steps.build-image.outputs.image }}
 
-  #  - name: Deploy Amazon ECS task definition
-  #    uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-  #    with:
-  #      task-definition: ${{ steps.task-def.outputs.task-definition }}
-  #      service: ${{ env.ECS_SERVICE }}
-  #      cluster: ${{ env.ECS_CLUSTER }}
-  #      wait-for-service-stability: true
+    - name: Deploy Amazon ECS task definition
+      uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+      with:
+        task-definition: ${{ steps.task-def.outputs.task-definition }}
+        service: ${{ env.ECS_SERVICE }}
+        cluster: ${{ env.ECS_CLUSTER }}
+        wait-for-service-stability: true
