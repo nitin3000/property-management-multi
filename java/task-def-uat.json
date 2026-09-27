@@ -73,7 +73,19 @@
         {
           "name": "REDIS_PORT",
           "value": "6379"
-        }
+        },
+        {
+  "name": "MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS",
+  "value": "always"
+},
+{
+  "name": "MANAGEMENT_HEALTH_DB_ENABLED",
+  "value": "true"
+},
+{
+  "name": "MANAGEMENT_HEALTH_REDIS_ENABLED",
+  "value": "true"
+}
       ],
       "logConfiguration": {
         "logDriver": "awslogs",
