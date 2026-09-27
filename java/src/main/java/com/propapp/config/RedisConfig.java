@@ -3,8 +3,7 @@ package com.propapp.config;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.RedisClusterConfiguration;
-import org.springframework.data.redis.connection.lettuce.LettuceClientConfiguration;
+import org.springframework.data.redis.connection.RedisStandaloneConfiguration; // 🚀 CHANGED: Standalone config
 import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
@@ -12,33 +11,24 @@ import org.springframework.data.redis.serializer.StringRedisSerializer;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.beans.factory.annotation.Value;
-import java.util.Collections;
 
 @Configuration
 public class RedisConfig {
 
-    @Value("${spring.data.redis.host:localhost}")
+    // 🚀 UPDATED: Checks for the environment variable names injected by task-def-uat.json
+    @Value("${SPRING_DATA_REDIS_HOST:127.0.0.1}")
     private String redisHost;
 
-    @Value("${spring.data.redis.port:6379}")
+    @Value("${SPRING_DATA_REDIS_PORT:6379}")
     private int redisPort;
 
-    // 🚀 FIX 1: Explicitly configure the connection factory for ElastiCache Serverless
+    // 🚀 FIX: Connect as a standard standalone instance to talk directly to your sidecar
     @Bean
     public RedisConnectionFactory redisConnectionFactory() {
-        // Enforce Cluster Configuration for Serverless Redis topology
-        String clusterNode = String.format("%s:%d", redisHost, redisPort);
-        RedisClusterConfiguration clusterConfig = new RedisClusterConfiguration(Collections.singleton(clusterNode));
-        
-        // Enforce mandatory TLS/SSL encryption handshake
-        LettuceClientConfiguration clientConfig = LettuceClientConfiguration.builder()
-                .useSsl()
-                .build();
-                
-        return new LettuceConnectionFactory(clusterConfig, clientConfig);
+        RedisStandaloneConfiguration standaloneConfig = new RedisStandaloneConfiguration(redisHost, redisPort);
+        return new LettuceConnectionFactory(standaloneConfig); // .useSsl() is intentionally dropped here
     }
 
-    // 🚀 FIX 2: Explicitly pass the custom connection factory into the template configuration
     @Bean
     public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory connectionFactory) {
         RedisTemplate<String, Object> template = new RedisTemplate<>();
@@ -52,7 +42,7 @@ public class RedisConfig {
         // 2. Map polymorphic data streams (Array lists of your DTO structures) securely
         objectMapper.activateDefaultTyping(
             objectMapper.getPolymorphicTypeValidator(), 
-            ObjectMapper.DefaultTyping.EVERYTHING, // Updated to EVERYTHING to catch root-level ArrayLists
+            ObjectMapper.DefaultTyping.EVERYTHING, // Preserved to catch root-level ArrayList date formatting
             com.fasterxml.jackson.annotation.JsonTypeInfo.As.PROPERTY
         );
 
