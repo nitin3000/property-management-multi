@@ -75,6 +75,14 @@
           "value": "6379"
         },
         {
+  "name": "SPRING_DATA_REDIS_HOST",
+  "value": "property-search-cache-uat.serverless.use2.cache.amazonaws.com"
+},
+{
+  "name": "SPRING_DATA_REDIS_PORT",
+  "value": "6379"
+},
+        {
   "name": "MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS",
   "value": "always"
 },
