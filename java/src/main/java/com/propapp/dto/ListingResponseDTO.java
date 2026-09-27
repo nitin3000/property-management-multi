@@ -19,6 +19,9 @@ public class ListingResponseDTO {
     private String description;
     private double relevanceScore;
 
+    public ListingResponseDTO() {
+    }
+    
     // Constructor
     public ListingResponseDTO(Listing listing, double relevanceScore) {
         this.id = listing.getId();
