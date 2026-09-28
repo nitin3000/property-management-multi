@@ -27,27 +27,27 @@ public class ListingController {
     @Autowired
     private PropertyProducerService propertyProducerService; // Added for async ingestion
 
+   
     /**
      * POST /api/listings
-     * Refactored to drop synchronous DB overhead. Publishes message directly to Confluent Cloud.
+     * Forces a new unique ID for every single incoming benchmark request.
      */
     @PostMapping
     public ResponseEntity<Map<String, String>> createListing(@RequestBody Listing listing) {
-        // 1. Generate or extract an idempotency key (Message Key)
-        String propertyId = listing.getId() != null ? listing.getId() : UUID.randomUUID().toString();
-        listing.setId(propertyId);
+        // FORCE a unique ID for every request to distribute across all 24 partitions
+        String uniqueTxnId = UUID.randomUUID().toString();
+        listing.setId(uniqueTxnId);
 
-        // 2. Offload work asynchronously to Kafka
-        propertyProducerService.publishPropertyEvent(listing, propertyId);
+        // Offload to Kafka asynchronously using the unique ID as the partition key
+        propertyProducerService.publishPropertyEvent(listing, uniqueTxnId);
 
-        // 3. Instantly respond 202 Accepted to the client for extreme throughput capacity
         return ResponseEntity.status(HttpStatus.ACCEPTED)
                 .body(Map.of(
                     "status", "Accepted",
-                    "message", "Property listing payload queued safely for asynchronous streaming processing.",
-                    "id", propertyId
+                    "txnid", uniqueTxnId
                 ));
     }
+
 
     /**
      * GET /api/listings/search
