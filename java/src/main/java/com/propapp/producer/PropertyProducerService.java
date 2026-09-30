@@ -1,7 +1,7 @@
 package com.propapp.producer;
 
 import org.springframework.stereotype.Service;
-import com.propapp.model/.Listing;
+import com.propapp.model.Listing;
 
 
 @Service
