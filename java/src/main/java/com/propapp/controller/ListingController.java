@@ -36,7 +36,7 @@ public class ListingController {
     public ResponseEntity<Map<String, String>> createListing(@RequestBody Listing listing) {
         // FORCE a unique ID for every request to distribute across all 24 partitions
         String uniqueTxnId = UUID.randomUUID().toString();
-        listing.setId(uniqueTxnId);
+        listing.setId(uniqueTxnId); zzz
 
         // Offload to Kafka asynchronously using the unique ID as the partition key
         propertyProducerService.publishPropertyEvent(listing, uniqueTxnId);
