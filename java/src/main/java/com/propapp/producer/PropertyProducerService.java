@@ -9,5 +9,6 @@ public class PropertyProducerService {
     // For example:
     public void sendPropertyEvent(Object event) {
         // Kafka publishing logic will be handled here
+          System.out.println("Publishing event: " + eventType + " for listing: " + listing.getId());
     }
 }
