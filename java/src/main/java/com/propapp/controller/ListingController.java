@@ -17,7 +17,7 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/api/listings")
 public class ListingController {
-zzz
+
     @Autowired
     private ListingService listingService;
 
@@ -27,7 +27,6 @@ zzz
     @Autowired
     private PropertyProducerService propertyProducerService; // Added for async ingestion
 
-   
     /**
      * POST /api/listings
      * Forces a new unique ID for every single incoming benchmark request.
@@ -47,7 +46,6 @@ zzz
                     "txnid", uniqueTxnId
                 ));
     }
-
 
     /**
      * GET /api/listings/search
