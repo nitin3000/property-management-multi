@@ -28,7 +28,7 @@ jobs:
       continue-on-error: true
 # This step only runs if the Maven build step fails
     - name: Send Failures to AI Agent
-      if: steps.maven_build.outcome == 'failure'
+      if: always() && steps.maven_build.outcome == 'failure'
       run: |
         echo "❌ Build failed! Forwarding logs to OpenShift AI Agent..."
         
