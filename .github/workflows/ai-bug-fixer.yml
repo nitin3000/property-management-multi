@@ -38,18 +38,32 @@ jobs:
 
         echo "❌ Build failed! Forwarding logs to OpenShift AI Agent..."
         
-        # 1. Generate the JSON directly into a file on disk to prevent memory limits
+        # Construct the JSON directly into a file to avoid command argument length limits
         jq -n \
           --arg action "opened" \
-          --arg repo "${{ github.repositoryUrl }}" \
+          --argjson issue_num ${{ github.run_number }} \
+          --arg title "Compilation Failure in Build #${{ github.run_number }}" \
+          --arg body "The Maven compilation pipeline failed on branch ${{ github.ref_name }}." \
+          --arg full_name "${{ github.repository }}" \
+          --arg clone_url "https://github.com{{ github.repository }}.git" \
           --arg branch "${{ github.ref_name }}" \
-          --rawfile logs maven_build.log \
-          '{action: $action, repoUrl: $repo, branch: $branch, rawBuildLogs: $logs}' > payload.json
+          '{
+            action: $action,
+            issue: {
+              number: $issue_num,
+              title: $title,
+              body: $body
+            },
+            repository: {
+              full_name: $full_name,
+              clone_url: $clone_url,
+              default_branch: $branch
+            }
+          }' > payload.json
 
-        # 2. Use the @ symbol to tell curl to stream the file contents from disk
+        # Send the payload to the exact same webhook URL
         curl -X POST \
           -H "Content-Type: application/json" \
           -H "X-GitHub-Event: issues" \
           -d @payload.json \
           "${{ secrets.AI_AGENT_ROUTE_URL }}/api/webhooks/github"
-          
