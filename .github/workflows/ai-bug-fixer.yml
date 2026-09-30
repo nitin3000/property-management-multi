@@ -28,8 +28,13 @@ jobs:
       continue-on-error: true
 # This step only runs if the Maven build step fails
     - name: Send Failures to AI Agent
-      if: always() && steps.maven_build.outcome == 'failure'
+      if: always()
       run: |
+        if [ ! -f build_status.txt ]; then
+          echo "✅ Build passed. Skipping agent notification."
+          exit 0
+        fi
+
         echo "❌ Build failed! Forwarding logs to OpenShift AI Agent..."
         
         # 1. Read the raw text file directly (do NOT convert to JSON string yet)
