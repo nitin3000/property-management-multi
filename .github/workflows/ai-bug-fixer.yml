@@ -24,7 +24,7 @@ jobs:
     - name: Build with Maven
       id: maven_build
       run: |
-        mvn clean package -DskipTests 2>&1 | tee maven_build.log
+        mvn -f java/pom.xml clean package -DskipTests 2>&1 | tee maven_build.log
       continue-on-error: true
 
     # This step only runs if the Maven build step fails
