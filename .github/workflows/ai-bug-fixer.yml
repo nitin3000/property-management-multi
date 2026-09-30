@@ -33,15 +33,12 @@ jobs:
       run: |
         echo "❌ Build failed! Forwarding logs to OpenShift AI Agent..."
         
-        # Read logs and escape special characters safely for a JSON payload
-        CLEAN_LOGS=$(cat maven_build.log | jq -Rs .)
-        
-        # Construct JSON payload matching your Agent DTO requirements
-        PAYLOAD=$(jq -n \
+        # Read logs and escape special characters safely for a JSON payload        PAYLOAD=$(jq -n \
+          --arg action "opened" \
           --arg repo "${{ github.repositoryUrl }}" \
           --arg branch "${{ github.ref_name }}" \
-          --arg logs "$CLEAN_LOGS" \
-          '{action: "opened", repoUrl: $repo, branch: $branch, rawBuildLogs: $logs}')
+          --rawfile logs maven_build.log \
+          '{action: $action, repoUrl: $repo, branch: $branch, rawBuildLogs: $logs}')
 
 
         # Send the payload via curl to your OpenShift public route
