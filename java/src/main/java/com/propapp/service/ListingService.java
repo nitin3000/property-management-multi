@@ -26,7 +26,7 @@ public class ListingService {
     
 public Page<ListingResponseDTO> getRankedListings(
         String city, Double minPrice, Double maxPrice, Integer minBedrooms, String keyword,
-        Double targetBudget, int page, int size) {
+        Double targetBudget, int page, int size) { zzz
     
     String cacheKey = "none";
     try {
