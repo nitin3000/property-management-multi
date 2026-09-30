@@ -11,4 +11,11 @@ public class PropertyProducerService {
         // Kafka publishing logic will be handled here
           System.out.println("Publishing event: " + eventType + " for listing: " + listing.getId());
     }
+
+    public void publishPropertyEvent(Listing listing, String eventType) {
+        // Your autonomous agent will inject the KafkaTemplate logic here later.
+        // For now, we provide the stub to pass the compilation gate.
+        System.out.println("Publishing event: " + eventType + " for listing: " + listing.getId());
+    }
+
 }
