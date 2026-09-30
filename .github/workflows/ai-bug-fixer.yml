@@ -25,7 +25,7 @@ jobs:
       id: maven_build
       run: |
         set -o pipefail
-        mvn -f java/pom.xml clean package -DskipTests 2>&1 | tee maven_build.log
+        mvn -f java/pom.xml clean package -DskipTests 2>&1 | tee maven_build.log || echo "FAILED" > build_status.txt
       continue-on-error: true
 # This step only runs if the Maven build step fails
     - name: Send Failures to AI Agent
