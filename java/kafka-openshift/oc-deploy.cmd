@@ -1,5 +1,7 @@
 set OC_HOME=C:\Users\nitin\property-management-main\java\kafka-openshift\oc
 
+set PATH=%PATH%;%OC_HOME%
+
 # Make sure you are in your dev project
 %OC_HOME%\oc project nitin3000-dev
 
