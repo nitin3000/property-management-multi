@@ -46,6 +46,6 @@ jobs:
         # Send the payload via curl to your OpenShift public route
         curl -X POST \
           -H "Content-Type: application/json" \
-          -H "X-GitHub-Event: push" \
+          -H "X-GitHub-Event: issues" \
           -d "$PAYLOAD" \
           "${{ secrets.AI_AGENT_ROUTE_URL }}/api/webhooks/github"
