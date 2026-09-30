@@ -38,18 +38,18 @@ jobs:
 
         echo "❌ Build failed! Forwarding logs to OpenShift AI Agent..."
         
-        # 1. Read the raw text file directly (do NOT convert to JSON string yet)
-        PAYLOAD=$(jq -n \
+        # 1. Generate the JSON directly into a file on disk to prevent memory limits
+        jq -n \
           --arg action "opened" \
           --arg repo "${{ github.repositoryUrl }}" \
           --arg branch "${{ github.ref_name }}" \
           --rawfile logs maven_build.log \
-          '{action: $action, repoUrl: $repo, branch: $branch, rawBuildLogs: $logs}')
+          '{action: $action, repoUrl: $repo, branch: $branch, rawBuildLogs: $logs}' > payload.json
 
-        # 3. Send the payload via curl to your OpenShift public route
+        # 2. Use the @ symbol to tell curl to stream the file contents from disk
         curl -X POST \
           -H "Content-Type: application/json" \
           -H "X-GitHub-Event: issues" \
-          -d "$PAYLOAD" \
+          -d @payload.json \
           "${{ secrets.AI_AGENT_ROUTE_URL }}/api/webhooks/github"
-
+          
