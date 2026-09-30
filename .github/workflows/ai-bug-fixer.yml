@@ -41,7 +41,8 @@ jobs:
           --arg repo "${{ github.repositoryUrl }}" \
           --arg branch "${{ github.ref_name }}" \
           --arg logs "$CLEAN_LOGS" \
-          '{repoUrl: $repo, branch: $branch, rawBuildLogs: $logs}')
+          '{action: "opened", repoUrl: $repo, branch: $branch, rawBuildLogs: $logs}')
+
 
         # Send the payload via curl to your OpenShift public route
         curl -X POST \
