@@ -39,14 +39,11 @@ jobs:
         echo "❌ Build failed! Forwarding logs to OpenShift AI Agent..."
         
         # 1. Read the raw text file directly (do NOT convert to JSON string yet)
-        RAW_LOGS=$(cat maven_build.log)
-        
-        # 2. Use jq to safely escape the raw logs and construct the entire JSON block in one clean step
         PAYLOAD=$(jq -n \
           --arg action "opened" \
           --arg repo "${{ github.repositoryUrl }}" \
           --arg branch "${{ github.ref_name }}" \
-          --arg logs "$RAW_LOGS" \
+          --rawfile logs maven_build.log \
           '{action: $action, repoUrl: $repo, branch: $branch, rawBuildLogs: $logs}')
 
         # 3. Send the payload via curl to your OpenShift public route
