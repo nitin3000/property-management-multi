@@ -47,4 +47,4 @@ jobs:
         curl -X POST \
           -H "Content-Type: application/json" \
           -d "$PAYLOAD" \
-          "${{ secrets.AI_AGENT_ROUTE_URL }}/api/listings"
+          "${{ secrets.AI_AGENT_ROUTE_URL }}/api/webhooks/github"
