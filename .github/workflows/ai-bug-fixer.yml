@@ -45,7 +45,7 @@ jobs:
           --arg title "Compilation Failure in Build #${{ github.run_number }}" \
           --arg body "The Maven compilation pipeline failed on branch ${{ github.ref_name }}." \
           --arg full_name "${{ github.repository }}" \
-          --arg clone_url "https://github.com${{ github.repository }}.git" \
+          --arg clone_url "https://github.com/${{ github.repository }}.git" \
           --arg branch "${{ github.ref_name }}" \
           '{
             action: $action,
