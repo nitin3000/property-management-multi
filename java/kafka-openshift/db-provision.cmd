@@ -1,5 +1,5 @@
 set OC_HOME=C:\Users\nitin\property-management-main\java\kafka-openshift\oc
 
-rem For Prod
-%OC_HOME%\oc new-app postgresql-ephemeral  -p POSTGRESQL_USER=postgresadmin   -p POSTGRESQL_PASSWORD=   -p POSTGRESQL_DATABASE=property_db   --name=property-postgres
+oc new-app centos/postgresql-12-centos7 -e POSTGRESQL_USER=postgresadmin -e POSTGRESQL_PASSWORD= -e POSTGRESQL_DATABASE=property_db --name=property-postgres
+
 
