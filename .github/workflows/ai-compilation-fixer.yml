@@ -1,9 +1,9 @@
 name: Java Build & AI Auto-Fix
 
-on:
-  push:
-    branches:
-      - uat-openshift
+#on:
+ # push:
+  #  branches:
+  #    - uat-openshift
   #workflow_dispatch:
 jobs:
   build-and-test:
