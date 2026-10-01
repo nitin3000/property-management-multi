@@ -24,7 +24,8 @@ public class PropertyEventConsumer {
     @KafkaListener(
         topics = "properties-lifecycle", 
         groupId = "property-service-group-uat",
-        containerFactory = "kafkaListenerContainerFactory"
+        containerFactory = "kafkaListenerContainerFactory",
+        autoStartup = "${spring.kafka.listener.auto-startup:true}"
     )
     @Transactional
     public void consumeEvent(ConsumerRecord<String, Listing> record, Acknowledgment ack) {
