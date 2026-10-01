@@ -27,6 +27,40 @@ import java.util.Map;
 @EnableKafka
 public class KafkaConfig {
 
+    // Inject your environment properties with safe, low fallback values
+    @Value("${spring.kafka.consumer.max-poll-records:10}")
+    private int maxPollRecords;
+
+    @Value("${spring.kafka.consumer.properties.max.partition.fetch.bytes:262144}")
+    private int maxPartitionFetchBytes;
+
+    @Value("${spring.kafka.consumer.properties.fetch.max.bytes:1048576}")
+    private int fetchMaxBytes;
+
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(
+            ConsumerFactory<String, String> consumerFactory) {
+            
+        ConcurrentKafkaListenerContainerFactory<String, String> factory = 
+            new ConcurrentKafkaListenerContainerFactory<>();
+        
+        // 1. Attach the core consumer factory
+        factory.setConsumerFactory(consumerFactory);
+        
+        // 2. FORCE the container factory to honor the throttled properties
+        Map<String, Object> props = new HashMap<>();
+        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
+        props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);
+        props.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
+        
+        // Override the consumer factory's defaults
+        factory.getContainerProperties().setKafkaConsumerProperties(new Properties() {{
+            putAll(props);
+        }});
+        
+        return factory;
+    }
+    
     // Helper method to collect common connection and cloud security settings
     private Map<String, Object> getCommonConfigs() {
         Map<String, Object> props = new HashMap<>();
