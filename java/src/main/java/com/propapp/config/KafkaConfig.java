@@ -86,12 +86,4 @@ public class KafkaConfig {
         
         return new DefaultKafkaConsumerFactory<>(configProps, new StringDeserializer(), jsonDeserializer);
     }
-
-    // 3. Connect the factory to your background container threads
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Listing> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, Listing> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory());
-        return factory;
-    }
 }
