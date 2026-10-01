@@ -69,25 +69,29 @@ public class KafkaConfig {
         return new KafkaTemplate<>(producerFactory());
     }
 
+
+        // 2. FIXED: Consumer Factory now calls getCommonConfigs() to inject Confluent Cloud security layers!
     @Bean
-public ConsumerFactory<String, Listing> consumerFactory() {
-    Map<String, Object> configProps = getCommonConfigs(); // Pulls your Confluent Cloud Security!
-    configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-    configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
-    
-    // Configure JsonDeserializer to trust your package models
-    JsonDeserializer<Listing> jsonDeserializer = new JsonDeserializer<>(Listing.class, false);
-    jsonDeserializer.addTrustedPackages("com.propapp.model", "com.propapp.dto");
-    
-    return new DefaultKafkaConsumerFactory<>(configProps, new StringDeserializer(), jsonDeserializer);
-}
+    public ConsumerFactory<String, Listing> consumerFactory() {
+        Map<String, Object> configProps = getCommonConfigs(); // <--- CRITICAL SECURITY LAYER
+        configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+        
+        // Match a generic consumer group if not specified in your OpenShift environment
+        String groupId = System.getenv().getOrDefault("SPRING_KAFKA_CONSUMER_GROUP_ID", "property-service-group");
+        configProps.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        
+        JsonDeserializer<Listing> jsonDeserializer = new JsonDeserializer<>(Listing.class, false);
+        jsonDeserializer.addTrustedPackages("com.propapp.model", "com.propapp.dto");
+        
+        return new DefaultKafkaConsumerFactory<>(configProps, new StringDeserializer(), jsonDeserializer);
+    }
 
-// 2. Define the Container Factory that spawns the background listener threads
-@Bean
-public ConcurrentKafkaListenerContainerFactory<String, Listing> kafkaListenerContainerFactory() {
-    ConcurrentKafkaListenerContainerFactory<String, Listing> factory = new ConcurrentKafkaListenerContainerFactory<>();
-    factory.setConsumerFactory(consumerFactory());
-    return factory;
-}
-
+    // 3. Connect the factory to your background container threads
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, Listing> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, Listing> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory());
+        return factory;
+    }
 }
