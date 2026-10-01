@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 public class PropertyProducerService {
 
     @Autowired
-    private KafkaTemplate<String, String> kafkaTemplate;
+    private KafkaTemplate<String, com.propapp.model.Listing> kafkaTemplate;
 
     @Value("${spring.kafka.property-topic}")
     private String propertyTopic;
