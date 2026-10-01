@@ -22,7 +22,7 @@ public class PropertyEventConsumer {
     }
 
     @KafkaListener(
-        topics = "property-events-prod", 
+        topics = "property-lifecycle", 
         groupId = "property-service-group-uat",
         containerFactory = "kafkaListenerContainerFactory"
     )
