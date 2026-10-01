@@ -1,8 +1,6 @@
 set OC_HOME=C:\Users\nitin\property-management-main\java\kafka-openshift\oc
 
-%OC_HOME%\oc set env deployment/property-service-prod SPRING_DATASOURCE_URL="jdbc:postgresql://postgresql:5432/property_db" SPRING_DATASOURCE_USERNAME="" SPRING_DATASOURCE_PASSWORD=""
-
-%OC_HOME%\oc set env deployment/property-service-uat SPRING_DATASOURCE_URL="jdbc:postgresql://postgresql:5432/property_db" SPRING_DATASOURCE_USERNAME="" SPRING_DATASOURCE_PASSWORD=""
+oc set env deployment/property-service-uat DB_HOST=property-postgres DB_PORT=5432 DB_NAME=property_db DB_USERNAME=postgresadmin DB_PASSWORD=your_secure_password
 
 
 %OC_HOME%\oc get pods
