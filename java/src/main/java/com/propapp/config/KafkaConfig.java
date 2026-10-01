@@ -21,8 +21,6 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.beans.factory.annotation.Value;
 
-import org.springframework.boot.autoconfigure.kafka.ConcurrentKafkaListenerContainerFactoryConfigurer;
-import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
 import java.util.Properties;
 
 import java.util.HashMap;
