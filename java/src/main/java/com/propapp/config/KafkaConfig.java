@@ -32,7 +32,13 @@ import java.util.Map;
 @EnableKafka
 public class KafkaConfig {
 
-    // Inject your environment properties with safe, low fallback values
+
+    @Value("${spring.kafka.consumer.bootstrap-servers}")
+    private String bootstrapServers;
+
+    @Value("${spring.kafka.consumer.group-id:property-service-group-uat}")
+    private String groupId;
+
     @Value("${spring.kafka.consumer.max-poll-records:10}")
     private int maxPollRecords;
 
@@ -42,31 +48,50 @@ public class KafkaConfig {
     @Value("${spring.kafka.consumer.properties.fetch.max.bytes:1048576}")
     private int fetchMaxBytes;
 
+    // Optional: Include these if you are connecting securely to Confluent Cloud via JAAS
+    @Value("${spring.kafka.properties.security.protocol:SASL_SSL}")
+    private String securityProtocol;
+
+    @Value("${spring.kafka.properties.sasl.mechanism:PLAIN}")
+    private String saslMechanism;
+
+    @Value("${spring.kafka.properties.sasl.jaas.config:}")
+    private String saslJaasConfig;
+
     @Bean
-public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(
-        ConcurrentKafkaListenerContainerFactoryConfigurer configurer,
-        KafkaProperties kafkaProperties) { // Spring automatically provides these two helper beans
+    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {
         
-    ConcurrentKafkaListenerContainerFactory<String, String> factory = 
-        new ConcurrentKafkaListenerContainerFactory<>();
-    
-    // 1. Let Spring automatically configure the core credentials (Bootstrap servers, SASL/JAAS Confluent configs)
-    DefaultKafkaConsumerFactory<Object, Object> consumerFactory = 
-        new DefaultKafkaConsumerFactory<>(kafkaProperties.buildConsumerProperties(null));
+        // 1. Manually build the base connection maps
+        Map<String, Object> configProps = new HashMap<>();
+        configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+        configProps.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
+        configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringDeserializer.class);
+        configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringDeserializer.class);
         
-    configurer.configure(factory, consumerFactory);
+        // Add security configs if they are filled in application.properties for Confluent
+        if (saslJaasConfig != null && !saslJaasConfig.isEmpty()) {
+            configProps.put("security.protocol", securityProtocol);
+            configProps.put("sasl.mechanism", saslMechanism);
+            configProps.put("sasl.jaas.config", saslJaasConfig);
+        }
+
+        // 2. Create the consumer factory layout
+        ConsumerFactory<String, String> consumerFactory = new DefaultKafkaConsumerFactory<>(configProps);
+        
+        ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory);
+        
+        // 3. Inject our strict, low-memory safety throttles explicitly onto the container properties
+        Properties kafkaProps = new Properties();
+        kafkaProps.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
+        kafkaProps.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);
+        kafkaProps.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
+        
+        factory.getContainerProperties().setKafkaConsumerProperties(kafkaProps);
+        
+        return factory;
+    }
     
-    // 2. Explicitly force our hard memory throttle limits on top of the connection configuration
-    Properties kafkaProps = new Properties();
-    kafkaProps.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
-    kafkaProps.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);
-    kafkaProps.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
-    
-    factory.getContainerProperties().setKafkaConsumerProperties(kafkaProps);
-    
-    return factory;
-}
-            
     // Helper method to collect common connection and cloud security settings
     private Map<String, Object> getCommonConfigs() {
         Map<String, Object> props = new HashMap<>();
