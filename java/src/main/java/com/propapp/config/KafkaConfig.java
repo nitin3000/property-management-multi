@@ -21,6 +21,10 @@ import org.springframework.kafka.support.serializer.JsonDeserializer;
 import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.beans.factory.annotation.Value;
 
+import org.springframework.boot.autoconfigure.kafka.ConcurrentKafkaListenerContainerFactoryConfigurer;
+import org.springframework.boot.autoconfigure.kafka.KafkaProperties;
+import java.util.Properties;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,30 +43,30 @@ public class KafkaConfig {
     private int fetchMaxBytes;
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(
-            ConsumerFactory<String, String> consumerFactory) {
-            
-        ConcurrentKafkaListenerContainerFactory<String, String> factory = 
-            new ConcurrentKafkaListenerContainerFactory<>();
+public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(
+        ConcurrentKafkaListenerContainerFactoryConfigurer configurer,
+        KafkaProperties kafkaProperties) { // Spring automatically provides these two helper beans
         
-        // 1. Attach the core consumer factory
-        factory.setConsumerFactory(consumerFactory);
-        
-        // 1. Create a clean java.util.Properties instance directly
-java.util.Properties kafkaProps = new java.util.Properties();
-
-// 2. Put the configuration variables straight into it
-kafkaProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
-kafkaProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);
-kafkaProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
-
-// 3. Set the typed Properties object safely onto the container factory
-factory.getContainerProperties().setKafkaConsumerProperties(kafkaProps);
-
-
-        return factory;
-    }
+    ConcurrentKafkaListenerContainerFactory<String, String> factory = 
+        new ConcurrentKafkaListenerContainerFactory<>();
     
+    // 1. Let Spring automatically configure the core credentials (Bootstrap servers, SASL/JAAS Confluent configs)
+    DefaultKafkaConsumerFactory<Object, Object> consumerFactory = 
+        new DefaultKafkaConsumerFactory<>(kafkaProperties.buildConsumerProperties(null));
+        
+    configurer.configure(factory, consumerFactory);
+    
+    // 2. Explicitly force our hard memory throttle limits on top of the connection configuration
+    Properties kafkaProps = new Properties();
+    kafkaProps.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
+    kafkaProps.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);
+    kafkaProps.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
+    
+    factory.getContainerProperties().setKafkaConsumerProperties(kafkaProps);
+    
+    return factory;
+}
+            
     // Helper method to collect common connection and cloud security settings
     private Map<String, Object> getCommonConfigs() {
         Map<String, Object> props = new HashMap<>();
