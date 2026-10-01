@@ -55,10 +55,8 @@ public class KafkaConfig {
         props.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
         
         // Override the consumer factory's defaults
-        factory.getContainerProperties().setKafkaConsumerProperties(new Properties() {{
-            putAll(props);
-        }});
-        
+        factory.getContainerProperties().setKafkaConsumerProperties(props);
+
         return factory;
     }
     
