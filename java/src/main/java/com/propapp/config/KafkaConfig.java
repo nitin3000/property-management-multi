@@ -48,14 +48,17 @@ public class KafkaConfig {
         // 1. Attach the core consumer factory
         factory.setConsumerFactory(consumerFactory);
         
-        // 2. FORCE the container factory to honor the throttled properties
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
-        props.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);
-        props.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
-        
-        // Override the consumer factory's defaults
-        factory.getContainerProperties().setKafkaConsumerProperties(props);
+        // 1. Create a clean java.util.Properties instance directly
+java.util.Properties kafkaProps = new java.util.Properties();
+
+// 2. Put the configuration variables straight into it
+kafkaProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
+kafkaProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);
+kafkaProps.put(org.apache.kafka.clients.consumer.ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
+
+// 3. Set the typed Properties object safely onto the container factory
+factory.getContainerProperties().setKafkaConsumerProperties(kafkaProps);
+
 
         return factory;
     }
