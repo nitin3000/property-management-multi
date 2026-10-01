@@ -12,10 +12,18 @@ import org.springframework.kafka.core.ProducerFactory;
 import org.springframework.kafka.support.serializer.JsonSerializer;
 import com.propapp.model.Listing;
 
+import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
+import org.springframework.kafka.core.ConsumerFactory;
+import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.springframework.kafka.support.serializer.JsonDeserializer;
+
 import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
+@EnableKafka
 public class KafkaConfig {
 
     // Helper method to collect common connection and cloud security settings
@@ -59,4 +67,26 @@ public class KafkaConfig {
     public KafkaTemplate<String, Listing> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
+
+    @Bean
+public ConsumerFactory<String, Listing> consumerFactory() {
+    Map<String, Object> configProps = getCommonConfigs(); // Pulls your Confluent Cloud Security!
+    configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+    configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
+    
+    // Configure JsonDeserializer to trust your package models
+    JsonDeserializer<Listing> jsonDeserializer = new JsonDeserializer<>(Listing.class, false);
+    jsonDeserializer.addTrustedPackages("com.propapp.model", "com.propapp.dto");
+    
+    return new DefaultKafkaConsumerFactory<>(configProps, new StringDeserializer(), jsonDeserializer);
+}
+
+// 2. Define the Container Factory that spawns the background listener threads
+@Bean
+public ConcurrentKafkaListenerContainerFactory<String, Listing> kafkaListenerContainerFactory() {
+    ConcurrentKafkaListenerContainerFactory<String, Listing> factory = new ConcurrentKafkaListenerContainerFactory<>();
+    factory.setConsumerFactory(consumerFactory());
+    return factory;
+}
+
 }
