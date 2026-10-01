@@ -30,8 +30,7 @@ import java.util.Map;
 @EnableKafka
 public class KafkaConfig {
 
-
-    @Value("${spring.kafka.consumer.bootstrap-servers}")
+    @Value("${spring.kafka.consumer.bootstrap-servers:${spring.kafka.bootstrap-servers:localhost:9092}}")
     private String bootstrapServers;
 
     @Value("${spring.kafka.consumer.group-id:property-service-group-uat}")
