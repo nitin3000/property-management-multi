@@ -1,6 +1,5 @@
 package com.propapp.config;
 
-import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.context.annotation.Bean;
@@ -22,19 +21,12 @@ import org.springframework.kafka.annotation.EnableKafka;
 import org.springframework.beans.factory.annotation.Value;
 
 import java.util.Properties;
-
 import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
 @EnableKafka
 public class KafkaConfig {
-
-    @Value("${spring.kafka.consumer.bootstrap-servers:${spring.kafka.bootstrap-servers:localhost:9092}}")
-    private String bootstrapServers;
-
-    @Value("${spring.kafka.consumer.group-id:property-service-group-uat}")
-    private String groupId;
 
     @Value("${spring.kafka.consumer.max-poll-records:10}")
     private int maxPollRecords;
@@ -45,50 +37,6 @@ public class KafkaConfig {
     @Value("${spring.kafka.consumer.properties.fetch.max.bytes:1048576}")
     private int fetchMaxBytes;
 
-    // Optional: Include these if you are connecting securely to Confluent Cloud via JAAS
-    @Value("${spring.kafka.properties.security.protocol:SASL_SSL}")
-    private String securityProtocol;
-
-    @Value("${spring.kafka.properties.sasl.mechanism:PLAIN}")
-    private String saslMechanism;
-
-    @Value("${spring.kafka.properties.sasl.jaas.config:}")
-    private String saslJaasConfig;
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {
-        
-        // 1. Manually build the base connection maps
-        Map<String, Object> configProps = new HashMap<>();
-        configProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        configProps.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
-        configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringDeserializer.class);
-        configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, org.apache.kafka.common.serialization.StringDeserializer.class);
-        
-        // Add security configs if they are filled in application.properties for Confluent
-        if (saslJaasConfig != null && !saslJaasConfig.isEmpty()) {
-            configProps.put("security.protocol", securityProtocol);
-            configProps.put("sasl.mechanism", saslMechanism);
-            configProps.put("sasl.jaas.config", saslJaasConfig);
-        }
-
-        // 2. Create the consumer factory layout
-        ConsumerFactory<String, String> consumerFactory = new DefaultKafkaConsumerFactory<>(configProps);
-        
-        ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory);
-        
-        // 3. Inject our strict, low-memory safety throttles explicitly onto the container properties
-        Properties kafkaProps = new Properties();
-        kafkaProps.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
-        kafkaProps.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);
-        kafkaProps.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
-        
-        factory.getContainerProperties().setKafkaConsumerProperties(kafkaProps);
-        
-        return factory;
-    }
-    
     // Helper method to collect common connection and cloud security settings
     private Map<String, Object> getCommonConfigs() {
         Map<String, Object> props = new HashMap<>();
@@ -96,7 +44,7 @@ public class KafkaConfig {
         // Read the variables we set in OpenShift
         String bootstrapServers = System.getenv().getOrDefault("SPRING_KAFKA_BOOTSTRAP_SERVERS", "localhost:9092");
         String saslJaasConfig = System.getenv("SPRING_KAFKA_PROPERTIES_SASL_JAAS_CONFIG");
-        String securityProtocol = System.getenv().getOrDefault("SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL", "PLAINTEXT");
+        String securityProtocol = System.getenv().getOrDefault("SPRING_KAFKA_PROPERTIES_SECURITY_PROTOCOL", "SASL_SSL");
         String saslMechanism = System.getenv().getOrDefault("SPRING_KAFKA_PROPERTIES_SASL_MECHANISM", "PLAIN");
 
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
@@ -131,21 +79,37 @@ public class KafkaConfig {
         return new KafkaTemplate<>(producerFactory());
     }
 
-
-        // 2. FIXED: Consumer Factory now calls getCommonConfigs() to inject Confluent Cloud security layers!
+    // 4. Define the Consumer Factory with matching deserializations AND Confluent Cloud security layers!
     @Bean
     public ConsumerFactory<String, Listing> consumerFactory() {
-        Map<String, Object> configProps = getCommonConfigs(); // <--- CRITICAL SECURITY LAYER
+        Map<String, Object> configProps = getCommonConfigs(); 
         configProps.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         configProps.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, JsonDeserializer.class);
         
         // Match a generic consumer group if not specified in your OpenShift environment
-        String groupId = System.getenv().getOrDefault("SPRING_KAFKA_CONSUMER_GROUP_ID", "property-service-group");
+        String groupId = System.getenv().getOrDefault("SPRING_KAFKA_CONSUMER_GROUP_ID", "property-service-group-uat");
         configProps.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
         
         JsonDeserializer<Listing> jsonDeserializer = new JsonDeserializer<>(Listing.class, false);
-        jsonDeserializer.addTrustedPackages("com.propapp.model", "com.propapp.dto");
+        jsonDeserializer.addTrustedPackages("com.propapp.model", "com.propapp.dto", "java.util", "java.lang");
         
         return new DefaultKafkaConsumerFactory<>(configProps, new StringDeserializer(), jsonDeserializer);
+    }
+
+    // 5. Connect your structured consumer factory directly to your active runtime container listener
+    @Bean
+    public ConcurrentKafkaListenerContainerFactory<String, Listing> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, Listing> factory = new ConcurrentKafkaListenerContainerFactory<>();
+        factory.setConsumerFactory(consumerFactory());
+        
+        // Inject our strict, low-memory safety throttles explicitly onto the container properties
+        Properties kafkaProps = new Properties();
+        kafkaProps.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
+        kafkaProps.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);
+        kafkaProps.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
+        
+        factory.getContainerProperties().setKafkaConsumerProperties(kafkaProps);
+        
+        return factory;
     }
 }
