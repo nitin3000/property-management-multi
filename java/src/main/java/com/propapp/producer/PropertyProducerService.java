@@ -10,9 +10,12 @@ public class PropertyProducerService {
 
     @Autowired
     private KafkaTemplate<String, String> kafkaTemplate;
+
+    @Value("${spring.kafka.property-topic}")
+    private String propertyTopic;
     
     public void publishPropertyEvent(Listing listing, String eventType) {
-        kafkaTemplate.send(topic, message);
+        kafkaTemplate.send(propertyTopic, eventType, listing);
     }
 
 }
