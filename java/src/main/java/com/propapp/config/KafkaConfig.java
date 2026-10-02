@@ -96,21 +96,4 @@ public class KafkaConfig {
         return new DefaultKafkaConsumerFactory<>(configProps, new StringDeserializer(), jsonDeserializer);
     }
 
-    // 5. Connect your structured consumer factory directly to your active runtime container listener
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Listing> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, Listing> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory());
-          factory.getContainerProperties().setAckMode(org.springframework.kafka.listener.ContainerProperties.AckMode.MANUAL_IMMEDIATE);
-  
-        // Inject our strict, low-memory safety throttles explicitly onto the container properties
-        Properties kafkaProps = new Properties();
-        kafkaProps.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords);
-        kafkaProps.put(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, maxPartitionFetchBytes);
-        kafkaProps.put(ConsumerConfig.FETCH_MAX_BYTES_CONFIG, fetchMaxBytes);
-        
-        factory.getContainerProperties().setKafkaConsumerProperties(kafkaProps);
-        
-        return factory;
-    }
 }
