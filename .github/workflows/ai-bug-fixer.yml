@@ -1,0 +1,30 @@
+name: Send Bug to OpenShift AI Agent
+
+on:
+  issues:
+    # Triggers on issue creation, edits, or when labels change
+    types: [opened, edited, labeled]
+
+jobs:
+  notify-agent:
+    # Condition 1: Ensure it has the 'bug' label
+    # Condition 2: Ensure it is not triggered by a label removal that leaves 'bug' intact
+    if: >
+      contains(github.event.issue.labels.*.name, 'bug') && 
+      (github.event.action == 'opened' || github.event.action == 'edited' || github.event.label.name == 'bug')
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Construct Payload and Trigger OpenShift Agent
+      run: |
+        PAYLOAD=$(jq -n \
+          --arg title "${{ github.event.issue.title }}" \
+          --arg body "${{ github.event.issue.body }}" \
+          --arg repo "${{ github.event.repository.clone_url }}" \
+          --arg branch "uat-openshift" \
+          '{action: "fix_bug", title: $title, description: $body, repoUrl: $repo, branch: $branch}')
+
+        curl -X POST \
+          -H "Content-Type: application/json" \
+          -d "$PAYLOAD" \
+          "${{ secrets.AI_AGENT_ROUTE_URL }}/api/webhooks/bugreport"

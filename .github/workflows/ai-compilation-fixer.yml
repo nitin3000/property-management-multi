@@ -1,10 +1,10 @@
 name: Java Build & AI Auto-Fix
 
-on:
-  push:
-    branches:
-      - uat-openshift
- # workflow_dispatch:
+#on:
+ # push:
+  #  branches:
+  #    - uat-openshift
+  #workflow_dispatch:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
@@ -24,26 +24,46 @@ jobs:
     - name: Build with Maven
       id: maven_build
       run: |
-        mvn -f java/pom.xml clean package -DskipTests 2>&1 | tee maven_build.log
+        set -o pipefail
+        mvn -f java/pom.xml clean package -DskipTests 2>&1 | tee maven_build.log || echo "FAILED" > build_status.txt
       continue-on-error: true
-
-    # This step only runs if the Maven build step fails
+# This step only runs if the Maven build step fails
     - name: Send Failures to AI Agent
-      if: steps.maven_build.outcome == 'failure'
+      if: always()
       run: |
+        if [ ! -f build_status.txt ]; then
+          echo "✅ Build passed. Skipping agent notification."
+          exit 0
+        fi
+
         echo "❌ Build failed! Forwarding logs to OpenShift AI Agent..."
         
-        # Read logs and escape special characters safely for a JSON payload        PAYLOAD=$(jq -n \
+        # Construct the JSON directly into a file to avoid command argument length limits
+        jq -n \
           --arg action "opened" \
-          --arg repo "${{ github.repositoryUrl }}" \
+          --argjson issue_num ${{ github.run_number }} \
+          --arg title "Compilation Failure in Build #${{ github.run_number }}" \
+          --arg body "The Maven compilation pipeline failed on branch ${{ github.ref_name }}." \
+          --arg full_name "${{ github.repository }}" \
+          --arg clone_url "https://github.com/${{ github.repository }}.git" \
           --arg branch "${{ github.ref_name }}" \
-          --rawfile logs maven_build.log \
-          '{action: $action, repoUrl: $repo, branch: $branch, rawBuildLogs: $logs}')
+          '{
+            action: $action,
+            issue: {
+              number: $issue_num,
+              title: $title,
+              body: $body
+            },
+            repository: {
+              full_name: $full_name,
+              clone_url: $clone_url,
+              default_branch: $branch
+            }
+          }' > payload.json
 
-
-        # Send the payload via curl to your OpenShift public route
+        # Send the payload to the exact same webhook URL
         curl -X POST \
           -H "Content-Type: application/json" \
           -H "X-GitHub-Event: issues" \
-          -d "$PAYLOAD" \
+          -d @payload.json \
           "${{ secrets.AI_AGENT_ROUTE_URL }}/api/webhooks/github"
