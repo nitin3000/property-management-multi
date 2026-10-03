@@ -5,7 +5,7 @@ import { AuthService } from '../services/auth.service';
 
 export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   const authService = inject(AuthService);
-  const token = authService.token();
+  const token = authService.getBearerToken();
 
   // Intercept requests targeting your specific API Gateway subdomain
   if (req.url.includes('://rephance.com')) {

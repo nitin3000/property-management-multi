@@ -6,6 +6,29 @@
       </h1>
       <p class="text-xs text-slate-400">PostgreSQL Data Sync Live Pipeline Engine</p>
     </div>
+	<div class="flex items-center gap-4">
+    @if (authService.isAuthenticated()) {
+      <!-- Authenticated Session View -->
+      <div class="flex items-center gap-3">
+        <div class="flex flex-col items-end">
+          <span class="text-xs font-medium text-slate-200">Session Active</span>
+          <span class="text-[10px] text-emerald-400 font-mono">Pipeline Connected</span>
+        </div>
+        <button 
+          (click)="authService.logout()" 
+          class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-slate-600 text-xs font-medium text-slate-300 rounded-md transition-all duration-150">
+          Disconnect
+        </button>
+      </div>
+    } @else {
+      <!-- Unauthenticated View -->
+      <button 
+        (click)="triggerLoginModal()" 
+        class="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-xs font-semibold text-white rounded-md shadow-sm shadow-blue-900/20 transition-all duration-150 tracking-wide border border-blue-500">
+        Secure Sign In
+      </button>
+    }
+  </div>
   </header>
 
   <div class="max-w-[1600px] mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">

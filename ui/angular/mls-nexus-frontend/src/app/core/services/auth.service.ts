@@ -1,39 +1,97 @@
-// src/app/core/services/auth.service.ts
-import { inject, Injectable, signal, computed } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { tap, catchError, of } from 'rxjs';
+// src/app/services/auth.service.ts
+import { Injectable, signal, computed } from '@angular/core';
+import { signIn, signOut, getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
+import { Amplify } from 'aws-amplify';
 
-@Injectable({ providedIn: 'root' })
+@Injectable({
+  providedIn: 'root' // Standard root singleton, matching Spring's @Service
+})
 export class AuthService {
-  private http = inject(HttpClient);
-  private authUrl = 'https://rephance.com';
+  // 1. Reactive Signal States for user info and loading status
+  readonly currentUser = signal<any | null>(null);
+  readonly isLoading = signal<boolean>(false);
+  readonly authError = signal<string | null>(null);
 
-  // 1. Reactive Signals for core state
-  // Initializes by checking localStorage so the user stays logged in on page refresh
-  private _token = signal<string | null>(localStorage.getItem('auth_token'));
-  private _username = signal<string | null>(localStorage.getItem('user_name'));
+  // 2. Computed Read-Only state to check if authenticated (Updates automatically)
+  readonly isAuthenticated = computed(() => this.currentUser() !== null);
 
-  // 2. Computed signals expose read-only state to components
-  readonly token = this._token.asReadonly();
-  readonly username = this._username.asReadonly();
-  readonly isLoggedIn = computed(() => !!this._token());
-
-  login(credentials: { email: string; pass: string }) {
-    return this.http.post<{ token: string; username: string }>(this.authUrl, credentials).pipe(
-      tap(res => {
-        // Save to storage and update signals reactively
-        localStorage.setItem('auth_token', res.token);
-        localStorage.setItem('user_name', res.username);
-        this._token.set(res.token);
-        this._username.set(res.username);
-      })
-    );
+  constructor() {
+    // Automatically check for an active user session on app load
+    this.checkCurrentUser();
+    // 2. Initialize your Cognito Pool variables
+    Amplify.configure({
+      Auth: {
+        Cognito: {
+          userPoolId: 'us-east-1_xxxxxxxxx',       // Your AWS User Pool ID
+          userPoolClientId: 'xxxxxxxxxxxxxxxxxx'   // Your AWS App Client ID
+        }
+      }
+    });
   }
 
-  logout() {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('user_name');
-    this._token.set(null);
-    this._username.set(null);
+  /**
+   * Main Login Method using AWS Cognito
+   */
+  async login(username: string, password: string): Promise<boolean> {
+    this.isLoading.set(true);
+    this.authError.set(null);
+
+    try {
+      const { isSignedIn, nextStep } = await signIn({ username, password });
+      
+      if (isSignedIn) {
+        await this.checkCurrentUser();
+        return true;
+      }
+      
+      // Handle advanced banking scenarios (e.g., Force Change Password / MFA)
+      if (nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
+        this.authError.set('New password required.');
+      }
+      return false;
+
+    } catch (error: any) {
+      this.authError.set(error.message || 'Authentication failed.');
+      return false;
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  /**
+   * Main Logout Method
+   */
+  async logout(): Promise<void> {
+    try {
+      await signOut();
+      this.currentUser.set(null);
+    } catch (error) {
+      console.error('Error signing out:', error);
+    }
+  }
+
+  /**
+   * Internal Helper to grab current user details from local storage cache
+   */
+  private async checkCurrentUser(): Promise<void> {
+    try {
+      const user = await getCurrentUser();
+      this.currentUser.set(user);
+    } catch {
+      this.currentUser.set(null); // No active session found
+    }
+  }
+
+  /**
+   * Accessor method for the Angular HTTP Interceptor to grab the active JWT
+   */
+  async getBearerToken(): Promise<string | null> {
+    try {
+      const session = await fetchAuthSession();
+      return session.tokens?.idToken?.toString() || null;
+    } catch {
+      return null;
+    }
   }
 }
+
