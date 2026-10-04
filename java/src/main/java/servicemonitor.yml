@@ -1,0 +1,18 @@
+apiVersion: ://coreos.com
+kind: ServiceMonitor
+metadata:
+  name: property-app-pipeline-monitor
+  labels:
+    k8s-app: property-app-monitoring
+spec:
+  selector:
+    matchExpressions:
+      - key: app
+        operator: In
+        values:
+          - property-service-uat  # Matches the label on your Producer Service
+          - property-consumer-uat  # Matches the label on your Consumer Service
+  endpoints:
+  - port: http
+    path: /actuator/prometheus
+    interval: 15s
