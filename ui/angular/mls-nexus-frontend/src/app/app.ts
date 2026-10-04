@@ -5,20 +5,18 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { PropertyListing } from './models/property_listing';
 import { SpringPageResponse } from './models/spring_page_response';
 import { environment } from '../environments/environment'; 
-import { AuthService } from './core/services/auth.service';
-import { Router } from '@angular/router'; // 1. Import the global blueprint from core packages
+import { AppHeaderComponent } from '../app-header/app-header';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, CurrencyPipe, DatePipe],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, CurrencyPipe, DatePipe, AppHeaderComponent],
   templateUrl: './app.html'
 })
 export class AppComponent implements OnInit {
   private http = inject(HttpClient);
   private fb = inject(FormBuilder);
-  private authService = inject(AuthService);
-  private router = inject(Router);
+
 
   // Replace the old endpoint path with this exact string match:
   private readonly API_URL = environment.apiUrl+'/api/listings/search';
@@ -109,8 +107,5 @@ export class AppComponent implements OnInit {
 
   selectProperty(property: PropertyListing): void {
     this.selectedProperty.set(property);
-  }
-  triggerLoginModal(): void {
-    this.router.navigate(['/login']);
   }
 }

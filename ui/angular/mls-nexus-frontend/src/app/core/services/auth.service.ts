@@ -1,7 +1,12 @@
 // src/app/services/auth.service.ts
 import { Injectable, signal, computed } from '@angular/core';
-import { signIn, signOut, getCurrentUser, fetchAuthSession } from 'aws-amplify/auth';
+import { signIn, signOut, getCurrentUser, fetchAuthSession, confirmSignIn } from 'aws-amplify/auth';
 import { Amplify } from 'aws-amplify';
+
+export interface LoginResult {
+  success: boolean;
+  requiresNewPassword: boolean;
+}
 
 @Injectable({
   providedIn: 'root' // Standard root singleton, matching Spring's @Service
@@ -22,8 +27,8 @@ export class AuthService {
     Amplify.configure({
       Auth: {
         Cognito: {
-          userPoolId: 'us-east-1_xxxxxxxxx',       // Your AWS User Pool ID
-          userPoolClientId: 'xxxxxxxxxxxxxxxxxx'   // Your AWS App Client ID
+          userPoolId: 'us-east-1_SFRUDVD13',       // Your AWS User Pool ID
+          userPoolClientId: '495gfgv0rq7ia74c6cdjt6tvlp'   // Your AWS App Client ID
         }
       }
     });
@@ -32,27 +37,28 @@ export class AuthService {
   /**
    * Main Login Method using AWS Cognito
    */
-  async login(username: string, password: string): Promise<boolean> {
+  async login(username: string, password: string): Promise<LoginResult> {
     this.isLoading.set(true);
     this.authError.set(null);
 
     try {
       const { isSignedIn, nextStep } = await signIn({ username, password });
       
-      if (isSignedIn) {
-        await this.checkCurrentUser();
-        return true;
-      }
-      
       // Handle advanced banking scenarios (e.g., Force Change Password / MFA)
       if (nextStep.signInStep === 'CONFIRM_SIGN_IN_WITH_NEW_PASSWORD_REQUIRED') {
-        this.authError.set('New password required.');
+        return { success: false, requiresNewPassword: true };
       }
-      return false;
+
+      if (isSignedIn) {
+        await this.checkCurrentUser();
+        return { success: true, requiresNewPassword: false };
+      }
+      
+      return { success: false, requiresNewPassword: false };
 
     } catch (error: any) {
       this.authError.set(error.message || 'Authentication failed.');
-      return false;
+      throw error;
     } finally {
       this.isLoading.set(false);
     }
@@ -91,6 +97,24 @@ export class AuthService {
       return session.tokens?.idToken?.toString() || null;
     } catch {
       return null;
+    }
+  }
+
+  /**
+   * Submits the new permanent password to clear the Cognito challenge [1]
+   */
+  async resolveNewPasswordChallenge(newPassword: string): Promise<boolean> {
+    try {
+      // confirmSignIn automatically links to the active in-flight challenge context [1]
+      const { isSignedIn } = await confirmSignIn({ challengeResponse: newPassword });
+      
+      if (isSignedIn) {
+        await this.getBearerToken();
+      }
+      return isSignedIn;
+    } catch (error) {
+      console.error('Error confirming new password challenge:', error);
+      throw error;
     }
   }
 }
